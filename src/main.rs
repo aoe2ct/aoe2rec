@@ -33,11 +33,12 @@ pub struct EncodedHeader {
 pub struct RecHeader {
     game: NullString,
     save: f32,
-    version: u32,
+    version_minor: u16,
+    version_major: u16,
     build: u32,
     timestamp: i32,
-    version_2: f32,
-    interval_version: u32,
+    version_2: [u16; 2],
+    interval_version: [u16; 2],
     game_options_version: u32,
     n_dlc: u32,
     #[br(count=n_dlc)]
@@ -187,6 +188,8 @@ pub struct RecHeader {
     unknown17: [u8; 8],  // 26.16
     unknown18: [u8; 3],  // 37
     unknown19: [u8; 8],  // 50
+    #[br(if(version_major >= 63))]
+    unknown24: Option<[u8; 5]>,
     unknown20: DeString,
     unknown21: [u8; 5],
     unknown22: u8,      // 13.13
@@ -212,7 +215,8 @@ pub struct Player {
     name: DeString,
     player_type: u32,
     profile_id: u32,
-    #[br(magic = b"\x00\x00\x00\x00")]
+    // #[br(magic = b"\x00\x00\x00\x00")]
+    ai: [u8; 4],
     player_number: i32,
     prefer_random: u8,
     custom_ai: u8,
