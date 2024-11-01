@@ -3,8 +3,15 @@
 #pragma array_limit 70000
 import type.magic;
 
+float game_version;
+bool parse_objects = true;
+
 struct Separator {
     type::Magic<"\xA3\x5F\x02\x00">;
+};
+
+fn find_magic(str magic) {
+    return std::mem::find_string_in_range(0, $, std::mem::size(), magic) + std::string::length(magic);
 };
 
 struct DeString {
@@ -65,7 +72,7 @@ struct AIFile {
     u32 unknown2;
 };
 
-struct LobbySettings<auto major, auto minor> {
+struct LobbySettings {
     u32 game_options_version;
     u32 num_dlc;
     u32 dlcs[num_dlc];
@@ -169,7 +176,7 @@ struct LobbySettings<auto major, auto minor> {
     u8 unknown17[8];
     u8 unknown18[3];
     u8 unknown19[8];
-    if (major >= 63)
+    if (game_version >= 63)
     u8 unknown24[5];
     DeString unknown20;
     u8 unknown21[5];
@@ -294,7 +301,7 @@ struct MapInfo {
     u8 unknown2[112];
     u32 size_x_2;
     u32 size_y_2;
-    std::mem::MagicSearch<"\x98\x9E\x00\x00", float>;
+    $ = find_magic("\x98\x9E\x00\x00");
 };
 
 struct SavedView {
@@ -982,9 +989,9 @@ struct Init<auto num_players> {
     u32 player_stances[num_players];
     u32 allied_vision;
     bool allied_victory;
+    auto init_before_name = $;    
     u16 name_length;
     std::string::NullString name;
-    auto init_before_marker = $;
     type::Magic<"\x16">;
     u32 num_player_attributes;
     type::Magic<"\x21">;
@@ -1004,32 +1011,46 @@ struct Init<auto num_players> {
     u8 unknown2;
     u8 player_color;
     u8 unknown3;
-    $ = std::mem::find_string_in_range(0, $, std::mem::size(), "\x0B\x00\x08\x00\x00\x00\x02\x00\x00") + 9;
+    $ = find_magic("\x0B\x00\x08\x00\x00\x00\x02\x00\x00");
+    if (parse_objects) {
     Object objects[while(std::mem::read_unsigned($, 1) != 0x00)];
-    type::Magic<"\x00\x0B">;
-    if(player_type != 2) {
-        u32 sleeping_size;
-        u32 sleeping_grow;
-        Object sleeping_objects[while(std::mem::read_unsigned($, 1) != 0x00)];
         type::Magic<"\x00\x0B">;
-        u32 doppel_size;
-        u32 doppel_grow;
-        Object doppel_objects[while(std::mem::read_unsigned($, 1) != 0x00)];
-        type::Magic<"\x00\x0B">;
+        if(player_type != 2) {
+            u32 sleeping_size;
+            u32 sleeping_grow;
+            Object sleeping_objects[while(std::mem::read_unsigned($, 1) != 0x00)];
+            type::Magic<"\x00\x0B">;
+            u32 doppel_size;
+            u32 doppel_grow;
+            Object doppel_objects[while(std::mem::read_unsigned($, 1) != 0x00)];
+            type::Magic<"\x00\x0B">;
+        }
     }
-    std::print(std::format("0x{:X}", $));
-    go_to_next_player(num_player_attributes, init_before_marker - init_start_position);
-    break;
+    auto new_position = find_next_player(num_player_attributes, init_before_name - init_start_position);
+    if (new_position == -1) {
+        break;
+    }
+    $ = new_position;
  };
  
- fn go_to_next_player(u32 num_player_attributes, u32 backtrack) {
-     auto loc = std::mem::find_sequence_in_range(1, std::mem::base_address(), std::mem::size(), 0x16, u8(num_player_attributes));
+ fn find_next_player(u32 num_player_attributes, u32 backtrack) {
+     auto loc = std::mem::find_sequence_in_range(0, $, std::mem::size(), 0x16, u8(num_player_attributes));
      if (loc > std::mem::size()) {
-      std::print("Not found");
+      return -1;
      }
-     std::print(std::format("0x{:X}", $));
-     std::print(std::format("0x{:X}", loc - backtrack - 3));
-     str next_player = std::format("{:>X}", num_player_attributes);
+     u16 name_len = 1;
+     u8 offset = 3;
+     while (true) {
+        auto counter = std::mem::read_unsigned(loc - offset, 2);
+        
+        if (counter == name_len) {
+            break;
+        } else {
+            name_len = name_len + 1;
+            offset = offset + 1;
+        }
+     }
+     return loc - offset - backtrack;
  };
 
 struct Rec {
@@ -1037,11 +1058,12 @@ struct Rec {
     float checker;
     u16 version_minor;
     u16 version_major;
+    game_version = std::string::parse_float(std::format("{}.{}", version_major, version_minor));
     u32 build;
     s32 timestamp;
     u16 version[2];
     u16 interval_version[2];
-    LobbySettings<version_major, version_minor> lobby_settings;
+    LobbySettings lobby_settings;
     AIConfig ai_config;
     Replay replay;
     MapInfo map_info;
