@@ -330,7 +330,7 @@ struct Sprite {
     u16 frame;
     u8 invisible;
     if (sprite_type == 2) {
-        u32 animate_interval;
+        float animate_interval;
         u32 animate_last;
         u16 last_frame;
         u8 frame_changed;
@@ -385,10 +385,12 @@ struct StaticObject<auto type> {
     if (has_object_props == 1) {
         // TODO
         type::Magic("\xAA\xBB\xCC");
+        std::error("object_props not implemented yet");
     } else {
         u8 has_sprite_list;
         if (has_sprite_list > 0) {
-            Sprite sprites[10000];
+            Sprite sprites[while(std::mem::read_unsigned($, 1) != 0)];
+            type::Magic<"\x00"> sprites_end;
         }
     }
     Particle particles[5];
@@ -398,10 +400,8 @@ struct StaticObject<auto type> {
     DeString unknown6;
     DeString unknown7;
     u8 unknown8[2];
-    if(type == 10) {
-        padding[1];
-    }
-    u8 unknown9[18];
+    u8 unknown9;
+    u8 unknown10[18];
 };
 
 struct AnimatedObject<auto type> : StaticObject<type> {
@@ -464,7 +464,7 @@ struct BaseMovingObject<auto type> : AnimatedObject<type> {
 };
 
 struct MovingObject<auto type> : BaseMovingObject<type> {
-    u8 unknown1[22];
+    u8 unknown1[21];
 };
 
 struct Gatherpoint {
@@ -500,8 +500,15 @@ struct MakeAction {
     float work_timer;
 };
 
+enum ActionType : u16 {
+    Move = 1,
+    Enter = 3,
+    Attack = 9,
+    MakeAction = 21,
+};
+
 struct UnitAction {
-    u16 action_type;
+    ActionType action_type;
     if (action_type == 0) {
         break;
     }
@@ -514,7 +521,8 @@ struct UnitAction {
     u8 target_moved_state;
     u16 task_id;
     u8 sub_action_value;
-    UnitAction sub_actions[10000];
+    UnitAction sub_actions[while(std::mem::read_unsigned($, 2) != 0)];
+    type::Magic<"\x00\x00"> sub_actions_end;
     s16 sprite_id;
     match (action_type) {
      (1): MoveAction move_action;
@@ -528,7 +536,8 @@ struct Action<auto type> : BaseMovingObject<type> {
     u8 waiting;
     u8 command_flag;
     u16 selected_group_info;
-    UnitAction actions[10000];
+    UnitAction actions[while(std::mem::read_unsigned($, 2) != 0)];
+    type::Magic<"\x00\x00"> actions_end;
 };
 
 struct BaseCombat<auto type> : Action<type> {
@@ -536,9 +545,9 @@ struct BaseCombat<auto type> : Action<type> {
     u8 formation_row;
     u8 formation_col;
     float attack_timer;
-    u8 capture_flag;
-    u8 multi_unified_points;
-    u8 large_object_radius;
+    s8 capture_flag;
+    s8 multi_unified_points;
+    s8 large_object_radius;
     u32 attack_count;
 };
 
@@ -753,10 +762,23 @@ struct BuildingUnit : CombatUnit {
     u8 salvage_attributes[6];
 };
 
+enum UnitType : u8 {
+    BaseUnit = 10,
+    BaseUnit = 15,
+    AnimatedUnit = 20,
+    AnimatedUnit = 25,
+    MovingUnit = 30,
+    ActionUnit = 40,
+    BaseCombatUnit = 50,
+    MissileUnit = 60,
+    CombatUnit = 70,
+    BuildingUnit = 80,
+};
+
 struct Unit {
-    u8 type;
+    UnitType type;
     match (type) {
-        (10): BaseUnit [[inline]];
+        (UnitType::BaseUnit): BaseUnit [[inline]];
         (15): BaseUnit [[inline]];
         (20): AnimatedUnit [[inline]];
         (25): AnimatedUnit [[inline]];
@@ -814,7 +836,7 @@ struct UnitAI {
     s32 current_action;
     s32 current_target;
     s16 current_target_type;
-    u8 unknown1[2];
+    s16 unknown1;
     Vector current_target_location;
     float desired_target_distance;
     s32 last_action;
@@ -875,8 +897,7 @@ fn has_position() {
 struct Combat<auto type> : BaseCombat<type> {
     u8 unknown_de1[14];
     u8 unknown_de2[16];
-    u8 unknown_de3[1];
-    u8 unknown_de4[4];
+    u8 unknown_de3[4];
     u8 next_volley;
     u8 using_special_animation;
     u8 own_base;
@@ -907,11 +928,11 @@ struct Combat<auto type> : BaseCombat<type> {
     float berserker_timer;
     u8 num_builders;
     u8 num_healers;
+    u32 unknown_de4;
     u32 unknown_de5;
-    u32 unknown_de6;
-    u8 unknown_de7[4];
-    u8 unknown_de8[48];
-    u8 unknown_de9[44];
+    u8 unknown_de6[4];
+    u8 unknown_de7[48];
+    u8 unknown_de8[44];
 };
 
 struct ProductionUnit {
@@ -935,13 +956,15 @@ struct Building<auto type> : Combat<type> {
     s32 linked_owner;
     s32 linked_children[3];
     u8 captured_unit_count;
-    UnitAction extra_actions[10000];
+    UnitAction extra_actions[while(std::mem::read_unsigned($, 2) != 0)];
+    type::Magic<"\x00\x00"> end_extra_actions;
     u16 capacity;
     ProductionUnit production_queue[capacity];
     u16 size;
     u16 production_queue_total_units;
     u8 production_queue_enabled;
-    UnitAction production_queue_actions[10000];
+    UnitAction production_queue_actions[while(std::mem::read_unsigned($, 2) != 0)];
+    type::Magic<"\x00\x00"> end_production_queue_actions;
     Vector endpoint;
     Vector endpoint_2;
     u32 gate_locked;
@@ -958,9 +981,15 @@ struct Building<auto type> : Combat<type> {
     u8 unknown_de5[12];
 };
 
+enum ObjType : u8 {
+    Static = 10,
+    Moving = 30,
+    Combat = 70,
+    Building = 80,
+};
 
 struct Object {
-    u8 type;
+    ObjType type;
     u8 player_id;
     match (type) {
         (10): StaticObject<type> [[inline]];
@@ -970,6 +999,10 @@ struct Object {
         (0): continue;
         (_): break;
     }
+}[[format_read("format_object")]];
+
+fn format_object(Object object) {
+    return std::format("type: {}", object.type);
 };
 
 struct ObjectsDelimiter {
