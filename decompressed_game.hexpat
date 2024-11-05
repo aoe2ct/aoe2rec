@@ -829,7 +829,7 @@ struct Retarget {
     u32 retarget_timeout;
 };
 
-struct UnitAI {
+struct UnitAI<auto ai_type> {
     s32 mood;
     s32 current_order;
     s32 current_order_priority;
@@ -874,13 +874,16 @@ struct UnitAI {
     u32 num_order_history;
     OrderHistory order_history[num_order_history];
     u32 last_retarget_time;
-    u32 randomized_traget_timer;
+    u32 randomized_target_timer;
     u32 num_retarget_entries;
     Retarget retarget_entries[num_retarget_entries];
     s32 best_unit_to_attack;
     u8 formation_type;
     u8 unknown_de1[4];
     u8 unknown_de2;
+    if (game_version >= 63 && ai_type == 15 || ai_type == 17) {
+        u8 unknown_de3[4];
+    }
 };
 
 fn has_position() {
@@ -911,7 +914,7 @@ struct Combat<auto type> : BaseCombat<type> {
     u8 inside_garrison_count;
     u32 has_ai;
     if (has_ai > 0) {
-        UnitAI ai;
+        UnitAI<has_ai> ai;
     }
 
     if(has_position()) {
@@ -932,7 +935,14 @@ struct Combat<auto type> : BaseCombat<type> {
     u32 unknown_de5;
     u8 unknown_de6[4];
     u8 unknown_de7[48];
-    u8 unknown_de8[44];
+    u8 unknown_de8[40];
+    u16 unknown_de9;
+    if (game_version >= 63 && has_ai == 15) {
+        float unknown_de10;
+        u8 unknown_de11[4];
+    } else {
+        u8 unknown_de10[2];
+    }
 };
 
 struct ProductionUnit {
@@ -983,21 +993,29 @@ struct Building<auto type> : Combat<type> {
 
 enum ObjType : u8 {
     Static = 10,
+    Animated = 20,
+    Animated2 = 25,
     Moving = 30,
+    Action = 40,
     Combat = 70,
     Building = 80,
+    Static2 = 90,
 };
 
 struct Object {
     ObjType type;
     u8 player_id;
     match (type) {
-        (10): StaticObject<type> [[inline]];
-        (30): MovingObject<type> [[inline]];
-        (70): Combat<type> [[inline]];
-        (80): Building<type> [[inline]];
+        (ObjType::Static): StaticObject<type> [[inline]];
+        (ObjType::Animated): AnimatedObject<type> [[inline]];
+        (ObjType::Animated2): AnimatedObject<type> [[inline]];
+        (ObjType::Moving): MovingObject<type> [[inline]];
+        (ObjType::Action): Action<type> [[inline]];
+        (ObjType::Combat): Combat<type> [[inline]];
+        (ObjType::Building): Building<type> [[inline]];
+        (ObjType::Static2): StaticObject<type> [[inline]];
         (0): continue;
-        (_): break;
+        (_): std::error(std::format("Unknown object type {} ({})", type, u8(type)));
     }
 }[[format_read("format_object")]];
 
