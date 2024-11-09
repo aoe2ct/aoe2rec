@@ -1,24 +1,8 @@
 use binrw::io::{BufReader, Cursor};
-use binrw::{binrw, BinReaderExt, BinResult, BinWriterExt, NullString};
-use clap::Parser;
+use binrw::{binrw, BinReaderExt, BinResult, NullString};
 use serde::Serialize;
+use std::error::Error;
 use std::fs::File;
-
-#[derive(Parser)]
-struct Args {
-    // Path to the aoe2record file
-    #[arg(short, long)]
-    file: std::path::PathBuf,
-}
-fn main() {
-    let args = Args::parse();
-    if !args.file.is_file() {
-        println!("File not found");
-        std::process::exit(-1);
-    }
-    let parsed_header = read_file(&args.file).unwrap();
-    println!("{}", serde_json::to_string_pretty(&parsed_header).unwrap());
-}
 
 #[binrw]
 pub struct EncodedHeader {
@@ -439,15 +423,17 @@ impl serde::Serialize for MyNullString {
     }
 }
 
-fn read_file(path: &std::path::Path) -> std::io::Result<RecHeader> {
-    let file = File::open(path)?;
-    let mut reader = BufReader::new(file);
-    let encoded_header: EncodedHeader = reader.read_le().unwrap();
-    let (header, _) = yazi::decompress(&encoded_header.zheader, yazi::Format::Raw).unwrap();
-    let mut hreader = Cursor::new(header);
-    let parsed_header: RecHeader = hreader.read_le().unwrap();
+impl RecHeader {
+    pub fn from_file(path: &std::path::Path) -> Result<RecHeader, Box<dyn Error>> {
+        let file = File::open(path)?;
+        let mut reader = BufReader::new(file);
+        let encoded_header: EncodedHeader = reader.read_le()?;
+        let (header, _) = yazi::decompress(&encoded_header.zheader, yazi::Format::Raw).unwrap();
+        let mut hreader = Cursor::new(header);
+        let parsed_header: RecHeader = hreader.read_le()?;
 
-    Ok(parsed_header)
+        Ok(parsed_header)
+    }
 }
 
 #[binrw::parser(reader, endian)]
@@ -464,8 +450,8 @@ fn read_strings_of_length() -> BinResult<Vec<DeString>> {
     Ok(strings)
 }
 
-#[binrw::writer(writer, endian)]
-fn write_len_and_string(strings: &Vec<DeString>) -> BinResult<()> {
+#[binrw::writer()]
+fn write_len_and_string(_strings: &Vec<DeString>) -> BinResult<()> {
     // for string in strings {
     //     writer.write_type(&u32::try_from(string.len()).unwrap(), endian)?;
     //     writer.write_type(&string, endian)?;

@@ -1,0 +1,9 @@
+[package]
+name = "aoe2rec"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+binrw = "0.14.1"
+serde = { version = "1.0.214", features = ["derive"] }
+yazi = "0.2.0"

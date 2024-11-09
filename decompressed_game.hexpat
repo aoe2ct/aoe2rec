@@ -1,6 +1,7 @@
 #pragma endian little
 #pragma pattern_limit 10000000000
 #pragma array_limit 70000
+
 import type.magic;
 
 float game_version;
@@ -11,7 +12,27 @@ struct Separator {
 };
 
 fn find_magic(str magic) {
-    return std::mem::find_string_in_range(0, $, std::mem::size(), magic) + std::string::length(magic);
+    auto pos = std::mem::find_string_in_range(0, $, std::mem::size(), magic);
+    if (pos == -1) {
+        return pos;
+    }
+    return pos + std::string::length(magic);
+};
+
+fn find_start_of_objects() {
+    while (true) {
+        auto pos = find_magic("\x0B\x00");
+        if (pos == -1) {
+            std::error("Could not find start of objects");
+        }
+        $ = pos;
+        auto pos2 = std::mem::find_string_in_range(0, $, $ + 7, "\x00\x00\x00\x02\x00\x00");
+        if (pos2 == -1) {
+            continue;
+        }
+        std::print(std::format("Found objects at {:x}", pos2 + 6));
+        return pos2 + 6;
+    }
 };
 
 struct DeString {
@@ -881,6 +902,7 @@ struct UnitAI<auto ai_type> {
     u8 formation_type;
     u8 unknown_de1[4];
     u8 unknown_de2;
+    std::print(std::format("{}", game_version));
     if (game_version >= 63 && ai_type == 15 || ai_type == 17) {
         u8 unknown_de3[4];
     }
@@ -1062,7 +1084,7 @@ struct Init<auto num_players> {
     u8 unknown2;
     u8 player_color;
     u8 unknown3;
-    $ = find_magic("\x0B\x00\x08\x00\x00\x00\x02\x00\x00");
+    $ = find_start_of_objects();
     if (parse_objects) {
     Object objects[while(std::mem::read_unsigned($, 1) != 0x00)];
         type::Magic<"\x00\x0B">;
