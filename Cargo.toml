@@ -7,4 +7,4 @@ edition = "2021"
 aoe2rec = { version = "0.1.0", path = "crates/aoe2rec" }
 
 [workspace]
-members = ["crates/aoe2js", "crates/aoe2rec"]
+members = ["crates/aoe2js", "crates/aoe2js_api", "crates/aoe2rec"]

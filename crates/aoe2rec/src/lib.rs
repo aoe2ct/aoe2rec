@@ -424,15 +424,22 @@ impl serde::Serialize for MyNullString {
 }
 
 impl RecHeader {
-    pub fn from_file(path: &std::path::Path) -> Result<RecHeader, Box<dyn Error>> {
-        let file = File::open(path)?;
-        let mut reader = BufReader::new(file);
+    pub fn build<T: BinReaderExt>(mut reader: T) -> Result<RecHeader, Box<dyn Error>> {
         let encoded_header: EncodedHeader = reader.read_le()?;
         let (header, _) = yazi::decompress(&encoded_header.zheader, yazi::Format::Raw).unwrap();
         let mut hreader = Cursor::new(header);
         let parsed_header: RecHeader = hreader.read_le()?;
 
         Ok(parsed_header)
+    }
+    pub fn from_bytes(data: bytes::Bytes) -> Result<RecHeader, Box<dyn Error>> {
+        let breader = BufReader::new(Cursor::new(data));
+        return RecHeader::build(breader);
+    }
+    pub fn from_file(path: &std::path::Path) -> Result<RecHeader, Box<dyn Error>> {
+        let file = File::open(path)?;
+        let reader = BufReader::new(file);
+        return RecHeader::build(reader);
     }
 }
 
