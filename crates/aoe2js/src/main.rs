@@ -12,6 +12,6 @@ fn main() {
         println!("File not found");
         std::process::exit(-1);
     }
-    let parsed_header = aoe2rec::RecHeader::from_file(&args.file).unwrap();
+    let parsed_header = aoe2rec::Savegame::from_file(&args.file).unwrap();
     println!("{}", serde_json::to_string_pretty(&parsed_header).unwrap());
 }

@@ -1,17 +1,150 @@
-use binrw::io::{BufReader, Cursor};
+use binrw::helpers::until_eof;
+use binrw::io::{BufReader, Cursor, SeekFrom};
 use binrw::{binrw, BinReaderExt, BinResult, NullString};
 use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
 
 #[binrw]
-pub struct EncodedHeader {
+#[derive(Serialize)]
+pub struct Savegame {
     length: u32,
     other: u32,
-    #[br(count = length - 8)]
-    zheader: Vec<u8>,
+    #[br(count = length - 8, map = decompress)]
+    zheader: RecHeader,
     log_version: u32,
+    meta: Meta,
+    #[br(parse_with = until_eof)]
+    operations: Vec<Operation>,
 }
+
+fn decompress(header_data: Vec<u8>) -> RecHeader {
+    let (header, _) = yazi::decompress(&header_data, yazi::Format::Raw).unwrap();
+    let mut hreader = Cursor::new(header);
+    let parsed_header: RecHeader = hreader.read_le().unwrap();
+    return parsed_header;
+}
+
+#[binrw]
+#[derive(Serialize)]
+pub struct Meta {
+    checksum_interval: u32,
+    #[br(pad_after = 3)]
+    #[bw(pad_after = 3)]
+    multiplayer: Bool,
+    rec_owner: u32,
+    #[br(pad_after = 3)]
+    #[bw(pad_after = 3)]
+    reveal_map: Bool,
+    use_sequence_numbers: u32,
+    number_of_chapters: u32,
+    aok_or_de: u32,
+}
+
+#[binrw]
+#[derive(Serialize)]
+pub enum Operation {
+    #[br(magic = 1u32)]
+    Action {
+        length: u32,
+        #[br(count=length + 4)]
+        action_data: Vec<u8>,
+    },
+    #[br(magic = 2u32)]
+    Sync {
+        time_increment: u32,
+        #[br(restore_position)]
+        next: u32,
+        #[br(if (next == 0))]
+        checksum: Option<SyncChecksum>,
+    },
+    #[br(magic = 3u32)]
+    Viewlock { x: f32, y: f32, player_id: u32 },
+    #[br(magic = 4u32)]
+    Chat { padding: [u8; 4], text: LenString },
+    #[br(magic = 6u32)]
+    PostGame {
+        #[br(seek_before = SeekFrom::End(-12))]
+        version: u32,
+        #[br(seek_before = SeekFrom::Current(-8))]
+        num_blocks: u32,
+        #[br(count = num_blocks, seek_before = SeekFrom::Current(-8))]
+        blocks: Vec<PostGameBlock>,
+        #[br(seek_before = SeekFrom::End(-8), ignore)]
+        realignment_field: (),
+        #[br(magic = b"\xce\xa4\x59\xb1\x05\xdb\x7b\x43", ignore)]
+        end_bit: (),
+    },
+}
+
+#[binrw]
+#[derive(Serialize)]
+pub enum PostGameBlock {
+    #[br(magic = 1u32)]
+    WorldTime {
+        #[br(seek_before=SeekFrom::Current(-8))]
+        length: u32,
+        #[br(seek_before=SeekFrom::Current(-(length as i64) - 4))]
+        world_time: u32,
+    },
+    #[br(magic = 2u32)]
+    Leaderboards {
+        #[br(seek_before = SeekFrom::Current(-8))]
+        length: u32,
+        #[br(seek_before = SeekFrom::Current(-(length as i64) - 4))]
+        num_leaderboards: u32,
+        #[br(count = num_leaderboards)]
+        leaderboards: Vec<Leaderboard>,
+        #[br(seek_before = SeekFrom::Current(-(length as i64) - 4), ignore)]
+        realignment_field: (),
+    },
+}
+
+#[binrw]
+#[derive(Serialize)]
+pub struct Leaderboard {
+    id: u32,
+    unknown1: u16,
+    num_players: u32,
+    #[br(count = num_players)]
+    players: Vec<LeaderboardPlayer>,
+}
+
+#[binrw]
+#[derive(Serialize)]
+pub struct LeaderboardPlayer {
+    player_number: i32,
+    rank: i32,
+    elo: i32,
+}
+
+#[binrw]
+#[derive(Serialize)]
+pub struct SyncChecksum {
+    unknown1: [u8; 8],
+    sync: u32,
+    unknown2: [u8; 4],
+    sequence: u32,
+    #[serde(skip_serializing)]
+    #[br(if (sequence > 0))]
+    unknown3: Option<[u8; 332]>,
+    unknown4: [u8; 8],
+}
+
+#[binrw]
+#[derive(Serialize)]
+#[br(repr = u32)]
+#[bw(repr = u32)]
+pub enum OperationType {
+    Action = 1,
+    Sync,
+    Viewlock,
+    Chat,
+}
+
+#[binrw]
+#[derive(Serialize)]
+pub struct SyncOperation {}
 
 #[binrw]
 #[derive(Serialize)]
@@ -385,6 +518,13 @@ impl Serialize for Bool {
 }
 
 #[binrw]
+pub struct LenString {
+    length: u32,
+    #[br(count = length)]
+    value: Vec<u8>,
+}
+
+#[binrw]
 pub struct DeString {
     #[br(magic = b"\x60\x0A")]
     length: u16,
@@ -413,6 +553,16 @@ impl Serialize for DeString {
     }
 }
 
+impl Serialize for LenString {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let strvalue = std::string::String::from_utf8_lossy(&self.value);
+        serializer.serialize_str(&strvalue)
+    }
+}
+
 impl serde::Serialize for MyNullString {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -423,23 +573,17 @@ impl serde::Serialize for MyNullString {
     }
 }
 
-impl RecHeader {
-    pub fn build<T: BinReaderExt>(mut reader: T) -> Result<RecHeader, Box<dyn Error>> {
-        let encoded_header: EncodedHeader = reader.read_le()?;
-        let (header, _) = yazi::decompress(&encoded_header.zheader, yazi::Format::Raw).unwrap();
-        let mut hreader = Cursor::new(header);
-        let parsed_header: RecHeader = hreader.read_le()?;
-
-        Ok(parsed_header)
+impl Savegame {
+    pub fn from_bytes(data: bytes::Bytes) -> Result<Savegame, Box<dyn Error>> {
+        let mut breader = BufReader::new(Cursor::new(data));
+        let savegame: Savegame = breader.read_le()?;
+        return Ok(savegame);
     }
-    pub fn from_bytes(data: bytes::Bytes) -> Result<RecHeader, Box<dyn Error>> {
-        let breader = BufReader::new(Cursor::new(data));
-        return RecHeader::build(breader);
-    }
-    pub fn from_file(path: &std::path::Path) -> Result<RecHeader, Box<dyn Error>> {
+    pub fn from_file(path: &std::path::Path) -> Result<Savegame, Box<dyn Error>> {
         let file = File::open(path)?;
-        let reader = BufReader::new(file);
-        return RecHeader::build(reader);
+        let mut reader = BufReader::new(file);
+        let savegame: Savegame = reader.read_le()?;
+        return Ok(savegame);
     }
 }
 
