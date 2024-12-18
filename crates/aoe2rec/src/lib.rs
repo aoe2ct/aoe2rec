@@ -1,3 +1,5 @@
+mod actions;
+
 use binrw::helpers::until_eof;
 use binrw::io::{BufReader, Cursor, SeekFrom};
 use binrw::{binrw, BinReaderExt, BinResult, NullString};
@@ -47,8 +49,8 @@ pub enum Operation {
     #[br(magic = 1u32)]
     Action {
         length: u32,
-        #[br(count=length + 4)]
-        action_data: Vec<u8>,
+        #[br(pad_after = 4, args(length))]
+        action_data: actions::ActionData,
     },
     #[br(magic = 2u32)]
     Sync {
