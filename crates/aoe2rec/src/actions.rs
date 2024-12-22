@@ -1,6 +1,8 @@
 use binrw::binrw;
 use serde::Serialize;
 
+use crate::Bool;
+
 #[binrw]
 #[derive(Serialize, Debug)]
 #[br(import(length: u32))]
@@ -127,6 +129,16 @@ pub enum ActionData {
     },
     #[br(magic = 41u8)]
     Unknown41 {
+        #[br(count = length - 1)]
+        data: Vec<u8>,
+    },
+    #[br(magic = 43u8)]
+    Unknown43 {
+        #[br(count = length - 1)]
+        data: Vec<u8>,
+    },
+    #[br(magic = 44u8)]
+    Unknown44 {
         #[br(count = length - 1)]
         data: Vec<u8>,
     },
@@ -267,6 +279,11 @@ pub enum ActionData {
         #[br(count = length - 1)]
         data: Vec<u8>,
     },
+    #[br(magic = 140u8)]
+    DeUnknown140 {
+        #[br(count = length - 1)]
+        data: Vec<u8>,
+    },
     #[br(magic = 196u8)]
     DeUnknown196 {
         #[br(count = length - 1)]
@@ -320,6 +337,29 @@ pub enum Game {
         unknown: [u8; 9],
         uknown2: [u8; 3],
         uknown3: u32,
+    },
+    #[br(magic = 3u8)]
+    UnknownCommand3 {
+        #[br(pad_after = 1)]
+        player_id: u8,
+    },
+    #[br(magic = 4u8)]
+    QuickBuild {
+        #[br(pad_after = 1)]
+        player_id: u8,
+        status: Bool,
+    },
+    #[br(magic = 5u8)]
+    AlliedVictory {
+        #[br(pad_after = 1)]
+        player_id: u8,
+        status: Bool,
+    },
+    #[br(magic = 6u8)]
+    Cheat {
+        #[br(pad_after = 1)]
+        player_id: u8,
+        cheat_id: u8,
     },
     // "speed"/If(this.mode == 'speed', Struct(
     //     Padding(4),

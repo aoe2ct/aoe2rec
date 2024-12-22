@@ -1,5 +1,7 @@
 mod actions;
+mod ai;
 
+use ai::AIInfo;
 use binrw::helpers::until_eof;
 use binrw::io::{BufReader, Cursor, SeekFrom};
 use binrw::{binrw, BinReaderExt, BinResult, NullString};
@@ -49,7 +51,7 @@ pub enum Operation {
     #[br(magic = 1u32)]
     Action {
         length: u32,
-        #[br(pad_after = 4, args(length))]
+        #[br(pad_after = 4, pad_size_to = length, args(length))]
         action_data: actions::ActionData,
     },
     #[br(magic = 2u32)]
@@ -64,6 +66,13 @@ pub enum Operation {
     Viewlock { x: f32, y: f32, player_id: u32 },
     #[br(magic = 4u32)]
     Chat { padding: [u8; 4], text: LenString },
+    #[br(magic = 5u32)]
+    AddAttribute {
+        player_id: u8,
+        #[br(pad_after = 1)]
+        attribute: u8,
+        amount: f32,
+    },
     #[br(magic = 6u32)]
     PostGame {
         #[br(seek_before = SeekFrom::End(-12))]
@@ -357,9 +366,11 @@ pub struct GameSettings {
 
 #[binrw]
 #[derive(Serialize)]
-pub struct AIConfig {
-    has_ai: u32,
-    // TODO: Implement the case where the AI is present
+pub enum AIConfig {
+    #[br(magic = 1u32)]
+    WithAI(AIInfo),
+    #[br(magic = 0u32)]
+    WithoutAI {},
 }
 
 #[binrw]
@@ -498,7 +509,7 @@ struct AIFile {
 }
 
 #[binrw]
-struct Bool {
+pub struct Bool {
     #[br(map = |x: u8| x == 1)]
     #[bw(map = |ranked: &bool| match ranked { true => 1u8, false => 0u8})]
     value: bool,
@@ -520,6 +531,7 @@ impl Serialize for Bool {
 }
 
 #[binrw]
+#[derive(Debug)]
 pub struct LenString {
     length: u32,
     #[br(count = length)]
