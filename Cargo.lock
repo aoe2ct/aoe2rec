@@ -100,7 +100,7 @@ dependencies = [
 
 [[package]]
 name = "aoe2rec-js"
-version = "0.1.2"
+version = "0.1.4"
 dependencies = [
  "aoe2rec",
  "bytes",

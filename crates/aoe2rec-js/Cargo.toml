@@ -1,6 +1,6 @@
 [package]
 name = "aoe2rec-js"
-version = "0.1.2"
+version = "0.1.4"
 authors = ["Stéphane Bisinger <stephane@sbisinger.ch>"]
 edition = "2021"
 

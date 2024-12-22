@@ -11,7 +11,7 @@ To use the library, pass a ArrayBuffer to the `parse_rec` function. Example:
 ```
 
 ```js
-import wasm from "aoe2rec-js";
+import { parse_rec } from "aoe2rec-js";
 
 const fileElem = document.getElementById("fileElem");
 fileElem.addEventListener("change", event => {
@@ -22,11 +22,14 @@ fileElem.addEventListener("change", event => {
   }
   const file = files[0]
   const reader = new FileReader();
-  reader.onload = (event) => {
-    wasm().then((instance) => {
-      const rec = instance.parse_rec(event.target.result);
-    });
-  };
+  reader.addEventListener('loadend', (event) => {
+    try {
+      const rec = parse_rec(event.target.result);
+    } catch (error) {
+      // It's important to catch errors because not all recs are guaranteed to parse correctly
+      console.error("Failed to parse game");
+    };
+  }, false);
   reader.readAsArrayBuffer(file);
 
 }, false);
