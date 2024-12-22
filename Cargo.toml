@@ -7,4 +7,13 @@ edition = "2021"
 aoe2rec = { version = "0.1.0", path = "crates/aoe2rec" }
 
 [workspace]
-members = ["crates/aoe2js", "crates/aoe2js_api", "crates/aoe2rec"]
+members = [
+	"crates/aoe2js",
+	"crates/aoe2js_api",
+	"crates/aoe2rec",
+	"crates/aoe2rec-js",
+]
+
+[profile.release]
+# Tell `rustc` to optimize for small code size.
+opt-level = "s"
