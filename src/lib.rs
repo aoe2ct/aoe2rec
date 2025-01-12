@@ -1,2 +1,2 @@
 pub extern crate aoe2rec;
-pub use aoe2rec::Replay;
+pub use aoe2rec::Savegame;
