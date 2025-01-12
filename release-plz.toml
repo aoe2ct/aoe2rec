@@ -1,3 +1,6 @@
 [[package]]
 name = "aoe2js_api"
 publish = false
+[[package]]
+name = "aoe2rec-js"
+publish = false
