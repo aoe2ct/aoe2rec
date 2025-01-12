@@ -1,6 +1,6 @@
 [package]
 name = "aoe2rec"
-description = "Library to parse Age of Empires II: Definitive Edition savegames"
+description = "Library to parse Age of Empires II: Definitive Edition recorded games"
 license = "MIT"
 version = "0.1.0"
 edition = "2021"

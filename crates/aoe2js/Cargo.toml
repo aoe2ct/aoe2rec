@@ -1,5 +1,7 @@
 [package]
 name = "aoe2js"
+description = "CLI utility to convert an AoE2 recorded game to JSON"
+license = "MIT"
 version = "0.1.0"
 edition = "2021"
 
