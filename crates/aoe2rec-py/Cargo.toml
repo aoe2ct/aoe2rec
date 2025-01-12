@@ -9,7 +9,7 @@ name = "aoe2rec_py"
 crate-type = ["cdylib"]
 
 [dependencies]
-aoe2rec = { version = "0.1.0", path = "../aoe2rec" }
+aoe2rec = { version = "0.1.1", path = "../aoe2rec" }
 bytes = "1.9.0"
 pyo3 = "~0.23.0"
 pythonize = "0.23.0"
