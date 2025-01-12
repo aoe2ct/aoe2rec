@@ -149,8 +149,40 @@ class RecSummary:
             "private": settings["lobby_visibility"] == 2,
         }
 
+    def _get_diplomacy_type(self):
+        n_teams = len(self.get_teams())
+        n_players = len(self.players)
+        if n_teams == 2 and n_players > 2:
+            return "TG"
+        if n_players == 2:
+            return "1v1"
+        if n_teams == n_players or (n_teams == 1 and n_players > 2):
+            return "FFA"
+        return "Other"
+
     def get_settings(self):
-        raise NotImplementedError()
+        settings = self._cache["zheader"]["game_settings"]
+        # TODO: Add missing names from constants in aocref
+        return {
+            "type": (settings["game_type"], "<Missing>"),
+            "difficulty": (settings["difficulty"], "<Missing>"),
+            "population_limit": settings["population_limit"],
+            "speed": (settings["speed"], "<Missing>"),
+            "cheats": settings["cheats"],
+            "team_together": settings["team_positions"],
+            "all_technologies": settings["all_techs"],
+            "lock_speed": settings["lock_speed"],
+            "lock_teams": settings["lock_teams"],
+            "map_reveal_choice": (settings["reveal_map"], "<Missing>"),
+            "diplomacy_type": self._get_diplomacy_type(),
+            "starting_resouces": (settings["starting_resources_id"], "<Missing>"),
+            "starting_age": (settings["starting_age_id"], "<Missing>"),
+            "ending_age": (settings["ending_age_id"], "<Missing>"),
+            "victory_condition": (settings["victory_type_id"], "<Missing>"),
+            "treaty_length": settings["treaty_length"],
+            "multiqueue": True,  # Always true for DE
+            "hidden_civs": settings["hidden_civs"],
+        }
 
     def get_file_hash(self):
         raise NotImplementedError()
