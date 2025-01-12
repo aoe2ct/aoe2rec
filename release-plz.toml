@@ -4,3 +4,6 @@ publish = false
 [[package]]
 name = "aoe2rec-js"
 publish = false
+[[package]]
+name = "aoe2rec-py"
+publish = false
