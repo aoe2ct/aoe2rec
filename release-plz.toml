@@ -5,3 +5,6 @@ release = false
 name = "aoe2rec-js"
 [[package]]
 name = "aoe2rec-py"
+[[package]]
+name = "aoe2rec-tools"
+release = false
