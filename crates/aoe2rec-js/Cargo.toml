@@ -2,6 +2,8 @@
 name = "aoe2rec-js"
 version = "0.1.4"
 authors = ["Stéphane Bisinger <stephane@sbisinger.ch>"]
+description = "WASM version of aoe2rec to parse Age of Empires II: Definitive Edition recorded games in the browser"
+license = "MIT"
 edition = "2021"
 
 [lib]
