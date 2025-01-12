@@ -1,0 +1,15 @@
+[package]
+name = "aoe2rec-py"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "aoe2rec_py"
+crate-type = ["cdylib"]
+
+[dependencies]
+aoe2rec = { version = "0.1.0", path = "../aoe2rec" }
+bytes = "1.9.0"
+pyo3 = "~0.23.0"
+pythonize = "0.23.0"

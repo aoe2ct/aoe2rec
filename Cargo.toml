@@ -12,6 +12,7 @@ members = [
 	"crates/aoe2js_api",
 	"crates/aoe2rec",
 	"crates/aoe2rec-js",
+	"crates/aoe2rec-py",
 ]
 
 [profile.release]

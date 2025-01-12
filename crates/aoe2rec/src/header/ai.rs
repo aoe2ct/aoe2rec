@@ -1,7 +1,7 @@
 use binrw::{binrw, BinReaderExt, BinResult};
 use serde::Serialize;
 
-// use crate::LenString;
+use crate::DeString;
 
 #[binrw]
 #[derive(Serialize, Debug)]
@@ -67,6 +67,14 @@ pub struct UnknownAI {
     crc: u32,
 }
 
+#[binrw]
+#[derive(Serialize)]
+pub struct AIFile {
+    pub unknown: u32,
+    pub name: DeString,
+    pub unknown2: u32,
+}
+
 #[binrw::parser(reader, endian)]
 fn skip_ai() -> BinResult<()> {
     let mut null_count = 0;
@@ -83,4 +91,3 @@ fn skip_ai() -> BinResult<()> {
     }
     Ok(())
 }
-
