@@ -10,7 +10,7 @@ on:
     branches:
       - main
     tags:
-      - '*'
+      - 'aoe2rec-py-v*'
   pull_request:
   workflow_dispatch:
 
