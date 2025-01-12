@@ -3,10 +3,10 @@ name = "aoe2js_api"
 release = false
 [[package]]
 name = "aoe2rec-js"
-publish = false
+# publish = false
 [[package]]
 name = "aoe2rec-py"
-publish = false
+# publish = false
 [[package]]
 name = "aoe2rec-tools"
 release = false
