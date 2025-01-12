@@ -3,7 +3,7 @@ requires-python = ">=3.8"
 
 [[package]]
 name = "aoe2rec-py"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "pip" },

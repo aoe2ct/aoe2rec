@@ -109,7 +109,11 @@ class RecSummary:
         return set([frozenset(s) for s in teams.values()])
 
     def get_diplomacy(self):
-        raise NotImplementedError()
+        diplo_type = self._get_diplomacy_type()
+        if diplo_type == "FFA":
+            return {"type": diplo_type, "team_size": "FFA"}
+        team_sizes = [str(len(team)) for team in self.get_teams()]
+        return {"type": diplo_type, "team_size": "v".join(team_sizes)}
 
     def get_players(self):
         return [
