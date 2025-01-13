@@ -1,22 +1,15 @@
-from collections import defaultdict
-import collections
-from dataclasses import dataclass
-from datetime import datetime, timedelta
 import json
+import collections
+
 from typing import BinaryIO
+from dataclasses import dataclass
+from collections import defaultdict
+from datetime import datetime, timedelta
 
-try:
-    from typing import override
-except ImportError:
-
-    def override(f):
-        return f
+from aoe2rec_py import aoe2rec_py, override
 
 
-from aoe2rec_py import aoe2rec_py
-
-
-@dataclass
+@dataclass(slots=True)
 class Chat:
     timestamp: timedelta
     player: str
