@@ -23,11 +23,17 @@ class Chat:
 class RecSummary:
     
     def __init__(self, handle: BinaryIO | str):
+        """Summary of a recorded Age of Empires 2 game.
+
+        Args:
+            handle (BinaryIO | str): aoe2record file IO object or path to file
+        """
         if isinstance(handle, str):
             with open(handle, "rb") as f:
                 data = f.read()
         else:
             data = handle.read()
+            
         self.duration: float = 0
         self.chats: list[Chat] = []
         self._cache = aoe2rec_py.parse_rec(data)
