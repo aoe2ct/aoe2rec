@@ -3,7 +3,16 @@ import collections
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
-import typing
+from typing import BinaryIO
+
+try:
+    from typing import override
+except ImportError:
+
+    def override(f):
+        return f
+
+
 from aoe2rec_py import aoe2rec_py
 
 
@@ -13,7 +22,7 @@ class Chat:
     player: str
     message: str
 
-    @typing.override
+    @override
     def __str__(self):
         return f"{self.timestamp} - {self.player}: {self.message}"
 
@@ -22,7 +31,7 @@ class RecSummary:
     duration: float = 0
     chats: list[Chat] = []
 
-    def __init__(self, handle: typing.BinaryIO):
+    def __init__(self, handle: BinaryIO):
         data = handle.read()
         self._cache = aoe2rec_py.parse_rec(data)
         self.players = {
