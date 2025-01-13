@@ -24,25 +24,71 @@ class RecSummary:
     
     def __init__(self, handle: BinaryIO | str):
         """Summary of a recorded Age of Empires 2 game.
-
+        
+        The summary is generated from the aoe2record file and provides
+        information about the game, players, chat messages, and more.
+        
+        Create a RecSummary object by passing a file IO object or file path
+        to the aoe2record file.
+        
         Args:
             handle (BinaryIO | str): aoe2record file IO object or path to file
+        
+        Example - File IO:
+            ```py
+            with open("game.aoe2record", "rb") as f:
+                rec = RecSummary(f)
+                print(rec.get_duration())
+                
+            # Output
+            0:17:34.000000
+            
+            with open("game.aoe2record", "rb") as f:
+                rec = RecSummary(f)
+                print(rec.get_chat())
+                
+            # Output
+            [0:00:00 - Player1: Hello!, 0:00:01 - Player2: Hi!]
+            ```
+            
+            
+        Example - String:
+            ```py
+            rec = RecSummary("game.aoe2record")
+            print(rec.get_duration())
+            
+            # Output
+            0:17:34.000000
+            
+            rec = RecSummary("game.aoe2record")
+            print(rec.get_chat())
+            
+            # Output
+            [0:00:00 - Player1: Hello!, 0:00:01 - Player2: Hi!]
+            ```
         """
+        # Read file and parse data
         if isinstance(handle, str):
             with open(handle, "rb") as f:
                 data = f.read()
         else:
             data = handle.read()
+        self._cache = aoe2rec_py.parse_rec(data)
             
+        # Initialize attributes
         self.duration: float = 0
         self.chats: list[Chat] = []
-        self._cache = aoe2rec_py.parse_rec(data)
-        self.players = {
-            player_id + 1: {"resigned": False, "elo": 0, "eapm": 0, **player}
-            for player_id, player in enumerate(
-                self._cache["zheader"]["game_settings"]["players"]
-            )
-        }
+        
+        # Initialize players
+        self.players = {}
+        player_data = self._cache["zheader"]["game_settings"]["players"]
+        for player_id, player in enumerate(player_data):
+            self.players[player_id + 1] = {
+                "resigned": False,
+                "elo": 0,
+                "eapm": 0,
+                **player
+            }
 
         self._parse_operations()
 
@@ -81,7 +127,7 @@ class RecSummary:
         for player_id, action_count in eapm_counter.items():
             self.players[player_id]["eapm"] = int(round(action_count / total_minutes))
 
-    def get_chat(self):
+    def get_chat(self) -> list[Chat]:
         return self.chats
 
     def get_postgame(self):
