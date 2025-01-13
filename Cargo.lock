@@ -114,7 +114,7 @@ dependencies = [
 
 [[package]]
 name = "aoe2rec-py"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "aoe2rec",
  "bytes",
