@@ -1,4 +1,5 @@
 from collections import defaultdict
+import collections
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
@@ -25,7 +26,7 @@ class RecSummary:
         data = handle.read()
         self._cache = aoe2rec_py.parse_rec(data)
         self.players = {
-            player_id + 1: {"resigned": False, "elo": 0, **player}
+            player_id + 1: {"resigned": False, "elo": 0, "eapm": 0, **player}
             for player_id, player in enumerate(
                 self._cache["zheader"]["game_settings"]["players"]
             )
@@ -34,6 +35,7 @@ class RecSummary:
         self._parse_operations()
 
     def _parse_operations(self):
+        eapm_counter = collections.Counter()
         for event in self._cache["operations"]:
             if "Sync" in event:
                 self.duration += event["Sync"]["time_increment"]
@@ -46,6 +48,11 @@ class RecSummary:
                         chat["message"],
                     )
                 )
+            if "Action" in event:
+                actions = event["Action"]["action_data"]
+                for action_type, action_data in actions.items():
+                    if "player_id" in action_data:
+                        eapm_counter[action_data["player_id"]] += 1
             if "PostGame" in event:
                 for block in event["PostGame"]["blocks"]:
                     if (
@@ -58,6 +65,9 @@ class RecSummary:
                             self.players[player["player_number"] + 1]["elo"] = player[
                                 "elo"
                             ]
+        total_minutes = self.get_duration().total_seconds() / 60
+        for player_id, action_count in eapm_counter.items():
+            self.players[player_id]["eapm"] = int(round(action_count / total_minutes))
 
     def get_chat(self):
         return self.chats
@@ -131,7 +141,7 @@ class RecSummary:
                 ],  # TODO: Parse players objects and find starting TC
                 "rate_snapshot": player["elo"],
                 "prefer_random": player["prefer_random"],
-                "eapm": 0,  # TODO: Calculate eapm
+                "eapm": player["eapm"],
             }
             for player_id, player in self.players.items()
         ]
