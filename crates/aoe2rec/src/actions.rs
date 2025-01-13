@@ -9,289 +9,403 @@ use crate::Bool;
 pub enum ActionData {
     #[br(magic = 0u8)]
     Interact {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 1u8)]
     Stop {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 2u8)]
     AiInteract {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 3u8)]
     Move {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 4u8)]
     Create {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 5u8)]
     AddAttribute {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 6u8)]
     GiveAttribute {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 10u8)]
     AiMove {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 11u8)]
     Resign {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 15u8)]
     Spec {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 16u8)]
     Waypoint {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 18u8)]
     Stance {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 19u8)]
     Guard {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 20u8)]
     Follow {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 21u8)]
     Patrol {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 23u8)]
     Formation {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 27u8)]
     Save {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 31u8)]
     AiWaypoint {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 32u8)]
     Chapter {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 33u8)]
     DeAttackMove {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 35u8)]
     DeUnknown35 {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 37u8)]
     DeUnknown37 {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 38u8)]
     Autoscout {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 39u8)]
     DeUnknown39 {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 41u8)]
     Unknown41 {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 43u8)]
     Unknown43 {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 44u8)]
     Unknown44 {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 45u8)]
     Unknown45 {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 53u8)]
     AiCommand {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 100u8)]
     AiQueue {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 101u8)]
     Research {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 102u8)]
     Build {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 103u8)]
     Game(Game),
     #[br(magic = 105u8)]
     Wall {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 106u8)]
     Delete {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 107u8)]
     AttackGround {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 108u8)]
     Tribute {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 109u8)]
     DeUnknown109 {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 110u8)]
     Repair {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 111u8)]
     Release {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 112u8)]
     Multiqueue {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 114u8)]
     ToggleGate {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 115u8)]
     Flare {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 117u8)]
     Order {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 119u8)]
     Queue {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 120u8)]
     Gatherpoint {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 122u8)]
     Sell {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 123u8)]
     Buy {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 126u8)]
     DropRelic {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 127u8)]
     TownBell {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 128u8)]
     BackToWork {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 129u8)]
     DeQueue {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 130u8)]
     DeUnknown130 {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 131u8)]
     DeUnknown131 {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 135u8)]
     DeUnknown135 {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 140u8)]
     DeUnknown140 {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 196u8)]
     DeUnknown196 {
-        #[br(count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
     #[br(magic = 255u8)]
     Achievements {
-        #[br(dbg, count = length - 1)]
+        player_id: u8,
+        action_length: u16,
+        #[br(dbg, count = length - 1 - 3)]
         data: Vec<u8>,
     },
 }
