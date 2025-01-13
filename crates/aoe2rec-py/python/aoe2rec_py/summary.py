@@ -21,11 +21,11 @@ class Chat:
 
 
 class RecSummary:
-    duration: float = 0
-    chats: list[Chat] = []
-
+    
     def __init__(self, handle: BinaryIO):
         data = handle.read()
+        self.duration: float = 0
+        self.chats: list[Chat] = []
         self._cache = aoe2rec_py.parse_rec(data)
         self.players = {
             player_id + 1: {"resigned": False, "elo": 0, "eapm": 0, **player}
