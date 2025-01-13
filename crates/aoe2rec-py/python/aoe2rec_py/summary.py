@@ -22,8 +22,12 @@ class Chat:
 
 class RecSummary:
     
-    def __init__(self, handle: BinaryIO):
-        data = handle.read()
+    def __init__(self, handle: BinaryIO | str):
+        if isinstance(handle, str):
+            with open(handle, "rb") as f:
+                data = f.read()
+        else:
+            data = handle.read()
         self.duration: float = 0
         self.chats: list[Chat] = []
         self._cache = aoe2rec_py.parse_rec(data)
