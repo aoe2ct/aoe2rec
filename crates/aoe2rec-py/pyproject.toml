@@ -12,6 +12,11 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = ["pip>=24.3.1"]
+
+[project.urls]
+Homepage = "https://github.com/aoe2ct/aoe2rec"
+Repository = "https://github.com/aoe2ct/aoe2rec/tree/main/crates/aoe2rec-py"
+
 [tool.maturin]
 features = ["pyo3/extension-module"]
 python-source = "python"
