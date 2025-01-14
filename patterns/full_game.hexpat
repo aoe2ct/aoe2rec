@@ -1,11 +1,11 @@
 #pragma endian little
 #pragma pattern_limit 10000000
 #pragma array_limit 1000000
-#include <std/mem.pat>
-#include <std/file.pat>
-#include <hex/dec.pat>
-#include <hex/provider.pat>
-#include <type/magic.pat>
+import std.mem;
+import std.file;
+import hex.dec;
+import hex.provider;
+import type.magic;
 
 
 struct Action {
