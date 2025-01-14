@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-py-v0.1.4...aoe2rec-py-v0.1.5) - 2025-01-14
+
+### Added
+
+- Add winner calculation
+
+### Fixed
+
+- Chats and duration should not be class variables
+- Turn aoe2rec-py into a package
+
+### Other
+
+- Updated pyproject.toml to include git repo
+
 ## [0.1.4](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-py-v0.1.3...aoe2rec-py-v0.1.4) - 2025-01-13
 
 ### Fixed
