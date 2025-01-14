@@ -3,9 +3,9 @@
 #pragma array_limit 1000000
 #include <std/mem.pat>
 #include <std/file.pat>
+#include <hex/dec.pat>
 #include <hex/provider.pat>
-import hex.dec;
-import type.magic;
+#include <type/magic.pat>
 
 
 struct Action {
