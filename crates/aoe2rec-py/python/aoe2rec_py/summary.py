@@ -61,6 +61,8 @@ class RecSummary:
                 for action_type, action_data in actions.items():
                     if "player_id" in action_data:
                         eapm_counter[action_data["player_id"]] += 1
+                        if action_type == "Resign":
+                            self.players[action_data["player_id"]]["resigned"] = True
             if "PostGame" in event:
                 for block in event["PostGame"]["blocks"]:
                     if (
@@ -141,7 +143,7 @@ class RecSummary:
                 "civilization": player["civ_id"],
                 "color_id": player["color_id"],
                 "human": player["player_type"] == 2,
-                "winner": False,  # TODO: Implement winner calculation
+                "winner": not player["resigned"],
                 "user_id": player["profile_id"],
                 "position": [
                     None,
@@ -244,8 +246,5 @@ class NotImplementedError(Exception):
 
 
 def test():
-    with open(
-        "/home/sb/dev/hcc/tournaments/wwcc/games/20241203 Numerfolt vs ClickBait/ClickBait_vs_Numerfolt_G1b.aoe2record",
-        "rb",
-    ) as f:
+    with open("ClickBait_vs_Numerfolt_G1b.aoe2record", "rb") as f:
         return RecSummary(f)
