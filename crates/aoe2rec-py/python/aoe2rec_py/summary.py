@@ -1,24 +1,14 @@
 import json
 import collections
 
-from typing import BinaryIO
-from dataclasses import dataclass
+from typing import BinaryIO, TYPE_CHECKING
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-from aoe2rec_py import aoe2rec_py, override
+from aoe2rec_py import aoe2rec_py
 
-
-@dataclass(slots=True)
-class Chat:
-    timestamp: timedelta
-    player: str
-    message: str
-
-    @override
-    def __str__(self):
-        return f"{self.timestamp} - {self.player}: {self.message}"
-
+if TYPE_CHECKING:
+    from aoe2rec_py.models import Chat
 
 class RecSummary:
     
@@ -130,6 +120,11 @@ class RecSummary:
             self.players[player_id]["eapm"] = int(round(action_count / total_minutes))
 
     def get_chat(self) -> list[Chat]:
+        """Returns a list of chat messages from the match.
+
+        Returns:
+            list[Chat]: List of chat messages
+        """
         return self.chats
 
     def get_postgame(self):
