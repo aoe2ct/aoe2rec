@@ -23,7 +23,7 @@ pub struct Savegame {
 }
 
 #[binrw]
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct Meta {
     pub checksum_interval: u32,
     #[br(pad_after = 3)]
@@ -39,7 +39,7 @@ pub struct Meta {
 }
 
 #[binrw]
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub enum Operation {
     #[br(magic = 1u32)]
     Action {
@@ -82,7 +82,7 @@ pub enum Operation {
 }
 
 #[binrw]
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub enum PostGameBlock {
     #[br(magic = 1u32)]
     WorldTime {
@@ -105,7 +105,7 @@ pub enum PostGameBlock {
 }
 
 #[binrw]
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct Leaderboard {
     pub id: u32,
     pub unknown1: u16,
@@ -115,7 +115,7 @@ pub struct Leaderboard {
 }
 
 #[binrw]
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct LeaderboardPlayer {
     pub player_number: i32,
     pub rank: i32,
@@ -123,7 +123,7 @@ pub struct LeaderboardPlayer {
 }
 
 #[binrw]
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct SyncChecksum {
     pub unknown1: [u8; 8],
     pub sync: u32,

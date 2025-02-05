@@ -36,7 +36,7 @@ pub struct RecHeader {
 }
 
 #[binrw]
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 #[br(import(major: u16))]
 pub struct GameSettings {
     pub game_options_version: u32,
@@ -245,7 +245,7 @@ pub struct GameSettings {
 }
 
 #[binrw]
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub enum AIConfig {
     #[br(magic = 1u32)]
     WithAI(AIInfo),
@@ -287,7 +287,7 @@ pub struct Replay {
 }
 
 #[binrw]
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct Player {
     pub dlc_id: u32,
     pub color_id: i32,
@@ -315,7 +315,7 @@ pub struct Player {
 }
 
 #[binrw]
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct EmptySlot {
     pub i0x: u32,
     pub i0a: u32,

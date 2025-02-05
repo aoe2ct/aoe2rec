@@ -68,7 +68,7 @@ pub struct UnknownAI {
 }
 
 #[binrw]
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct AIFile {
     pub unknown: u32,
     pub name: DeString,

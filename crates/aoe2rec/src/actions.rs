@@ -405,7 +405,7 @@ pub enum ActionData {
     Achievements {
         player_id: u8,
         action_length: u16,
-        #[br(dbg, count = length - 1 - 3)]
+        #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
 }
