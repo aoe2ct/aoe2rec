@@ -2,10 +2,10 @@
 name = "aoe2js"
 description = "CLI utility to convert an AoE2 recorded game to JSON"
 license = "MIT"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 
 [dependencies]
-aoe2rec = { version = "0.1.4", path = "../aoe2rec" }
+aoe2rec = { version = "0.1.5", path = "../aoe2rec" }
 clap = { version = "4.5.20", features = ["derive"] }
 serde_json = "1.0.132"
