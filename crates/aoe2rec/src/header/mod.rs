@@ -254,7 +254,7 @@ pub enum AIConfig {
 }
 
 #[binrw]
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct Replay {
     pub old_time: u32,
     pub world_time: u32,

@@ -1,5 +1,6 @@
 mod actions;
 mod header;
+pub mod summary;
 
 use binrw::helpers::until_eof;
 use binrw::io::{BufReader, Cursor, SeekFrom};
@@ -8,6 +9,7 @@ use header::{decompress, RecHeader};
 use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
+use summary::GameTeam;
 
 #[binrw]
 #[derive(Serialize)]
@@ -151,6 +153,7 @@ pub enum OperationType {
 pub struct SyncOperation {}
 
 #[binrw]
+#[derive(Copy, Clone)]
 pub struct Bool {
     #[br(map = |x: u8| x == 1)]
     #[bw(map = |ranked: &bool| match ranked { true => 1u8, false => 0u8})]
@@ -172,6 +175,18 @@ impl Serialize for Bool {
     }
 }
 
+impl From<bool> for Bool {
+    fn from(value: bool) -> Self {
+        Bool { value }
+    }
+}
+
+impl Into<bool> for Bool {
+    fn into(self) -> bool {
+        self.value
+    }
+}
+
 #[binrw]
 #[derive(Debug)]
 pub struct LenString {
@@ -181,6 +196,7 @@ pub struct LenString {
 }
 
 #[binrw]
+#[derive(Clone)]
 pub struct DeString {
     #[br(magic = b"\x60\x0A")]
     length: u16,
@@ -188,9 +204,37 @@ pub struct DeString {
     value: Vec<u8>,
 }
 
+impl Into<String> for DeString {
+    fn into(self) -> String {
+        std::string::String::from_utf8_lossy(&self.value).to_string()
+    }
+}
+
+impl From<&String> for DeString {
+    fn from(value: &String) -> Self {
+        Self {
+            value: value.as_bytes().to_vec(),
+            length: value.len().try_into().unwrap(),
+        }
+    }
+}
+
 #[binrw]
+#[derive(Debug, Clone)]
 pub struct MyNullString {
     text: NullString,
+}
+
+impl From<String> for MyNullString {
+    fn from(value: String) -> Self {
+        MyNullString { text: value.into() }
+    }
+}
+
+impl Into<String> for MyNullString {
+    fn into(self) -> String {
+        self.text.to_string()
+    }
 }
 
 impl std::fmt::Debug for DeString {
@@ -240,6 +284,48 @@ impl Savegame {
         let mut reader = BufReader::new(file);
         let savegame: Savegame = reader.read_le()?;
         return Ok(savegame);
+    }
+
+    pub fn get_duration(&self) -> u32 {
+        self.operations
+            .iter()
+            .fold(self.zheader.replay.world_time, |duration, operation| {
+                return match operation {
+                    Operation::Sync { time_increment, .. } => duration + time_increment,
+                    _ => duration,
+                };
+            })
+    }
+
+    pub fn get_resignations(&self) -> Vec<u8> {
+        self.operations
+            .iter()
+            .map(|operation| match operation {
+                Operation::Action { action_data, .. } => match action_data {
+                    actions::ActionData::Resign { player_id, .. } => *player_id,
+                    _ => 100,
+                },
+                _ => 100,
+            })
+            .filter(|player_id| *player_id < 100)
+            .collect()
+    }
+
+    pub fn get_summary(&self) -> summary::SavegameSummary {
+        summary::SavegameSummary {
+            header: summary::SummaryHeader {
+                game: &self.zheader.game,
+                version_minor: self.zheader.version_minor,
+                version_major: self.zheader.version_major,
+                build: self.zheader.build,
+                timestamp: self.zheader.timestamp,
+                game_settings: &self.zheader.game_settings,
+                replay: &self.zheader.replay,
+            },
+            duration: self.get_duration(),
+            resignations: self.get_resignations(),
+            teams: GameTeam::from_savegame(self),
+        }
     }
 }
 
