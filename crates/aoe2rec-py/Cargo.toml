@@ -2,7 +2,7 @@
 name = "aoe2rec-py"
 description = "Python package for the aoe2rec rust crate, which allows to parse Age of Empires II: Definitive Edition recorded games"
 license = "MIT"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,7 +11,7 @@ name = "aoe2rec_py"
 crate-type = ["cdylib"]
 
 [dependencies]
-aoe2rec = { version = "0.1.4", path = "../aoe2rec" }
+aoe2rec = { version = "0.1.5", path = "../aoe2rec" }
 bytes = "1.9.0"
 pyo3 = "~0.23.0"
 pythonize = "0.23.0"
