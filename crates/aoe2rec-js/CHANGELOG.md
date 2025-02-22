@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-js-v0.1.6...aoe2rec-js-v0.1.7) - 2025-02-22
+
+### Fixed
+
+- Export teams and duration at the correct level in the JS library
+
 ## [0.1.6](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-js-v0.1.5...aoe2rec-js-v0.1.6) - 2025-02-22
 
 ### Added
