@@ -34,6 +34,8 @@ pub fn parse_rec_summary(buffer: js_sys::ArrayBuffer) -> SavegameSummary {
 #[wasm_bindgen(getter_with_clone)]
 pub struct SavegameSummary {
     pub header: SavegameHeader,
+    pub teams: Vec<Team>,
+    pub duration: u32,
 }
 
 impl From<aoe2rec::summary::SavegameSummary<'_>> for SavegameSummary {
@@ -47,8 +49,9 @@ impl From<aoe2rec::summary::SavegameSummary<'_>> for SavegameSummary {
                 timestamp: summary.header.timestamp,
                 game_settings: GameSettings::from(&summary),
                 replay: Replay::from(&summary),
-                teams: summary.teams.iter().map(|team| team.into()).collect(),
             },
+            teams: summary.teams.iter().map(|team| team.into()).collect(),
+            duration: summary.duration,
         }
     }
 }
@@ -63,7 +66,6 @@ pub struct SavegameHeader {
     pub timestamp: i32,
     pub game_settings: GameSettings,
     pub replay: Replay,
-    pub teams: Vec<Team>,
 }
 
 #[wasm_bindgen(getter_with_clone)]
