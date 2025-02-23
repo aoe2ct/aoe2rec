@@ -475,27 +475,18 @@ pub enum Game {
         player_id: u8,
         cheat_id: u8,
     },
-    // "speed"/If(this.mode == 'speed', Struct(
-    //     Padding(4),
-    //     "speed"/Float32l,
-    //     Padding(1)
-    // )),
-    // "instant_build"/If(this.mode == 'instant_build', Struct(
-    //     Padding(9)
-    // )),
-    // "quick_build"/If(this.mode == 'quick_build', Struct(
-    //     "status"/Flag,
-    //     Padding(8),
-    // )),
-    // "allied_victory"/If(this.mode == 'allied_victory', Struct(
-    //     "player_id"/Byte,
-    //     "status"/Flag,
-    //     Padding(7)
-    // )),
-    // "cheat"/If(this.mode == 'cheat', Struct(
-    //     "cheat_id"/Byte,
-    //     Padding(8)
-    // )),
+    #[br(magic = 7u8)]
+    UnknownCommand4 {
+        #[br(pad_after = 1)]
+        player_id: u8,
+    },
+    #[br(magic = 8u8)]
+    UnknownCommand5 {
+        // This seems to be something map scripts do at the beginning of the game.
+        // For example this seems to happen on team Arena and Black Forest
+        #[br(pad_after = 1)]
+        player_id: u8,
+    },
     // "unk0"/If(this.mode == 'unk0', Struct(
     //     Padding(9)
     // )),
