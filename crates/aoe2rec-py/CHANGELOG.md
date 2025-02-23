@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-py-v0.1.7...aoe2rec-py-v0.1.8) - 2025-02-23
+
+### Other
+
+- updated the following local packages: aoe2rec
+
 ## [0.1.7](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-py-v0.1.6...aoe2rec-py-v0.1.7) - 2025-02-22
 
 ### Other

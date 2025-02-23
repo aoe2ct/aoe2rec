@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.1.5...aoe2rec-v0.1.6) - 2025-02-23
+
+### Fixed
+
+- Add missing unknown GameCommands
+
 ## [0.1.5](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.1.4...aoe2rec-v0.1.5) - 2025-02-22
 
 ### Added
