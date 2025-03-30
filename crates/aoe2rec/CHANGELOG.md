@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.1.6...aoe2rec-v0.2.0) - 2025-03-30
+
+### Fixed
+
+- Correctly parse recs with saved Chapters
+
 ## [0.1.6](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.1.5...aoe2rec-v0.1.6) - 2025-02-23
 
 ### Fixed
