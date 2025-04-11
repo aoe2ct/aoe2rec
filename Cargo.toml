@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-aoe2rec = { version = "0.2.0", path = "crates/aoe2rec" }
+aoe2rec = { version = "0.2.1", path = "crates/aoe2rec" }
 
 [workspace]
 members = [

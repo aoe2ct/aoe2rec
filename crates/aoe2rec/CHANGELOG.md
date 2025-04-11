@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.2.0...aoe2rec-v0.2.1) - 2025-04-11
+
+### Added
+
+- Add support for newer aoe2record version 64.19661
+
 ## [0.2.0](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.1.6...aoe2rec-v0.2.0) - 2025-03-30
 
 ### Fixed
