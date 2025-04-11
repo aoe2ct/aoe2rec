@@ -82,14 +82,14 @@ pub struct GameSettings {
     pub handicap: Bool,
     pub unk: Bool,
     #[br(magic = b"\xa3_\x02\x00")]
-    #[br(count = n_players)]
+    #[br(count = n_players, args { inner: (major,)})]
     pub players: Vec<Player>,
     pub unknown: [u8; 9],
     pub fog_of_war: Bool,
     pub cheat_notifications: Bool,
     pub colored_chat: Bool,
     #[serde(skip_serializing)]
-    #[br(count = 8 - n_players)]
+    #[br(count = 8 - n_players, args { inner: (major,)})]
     pub empty_slots: Vec<EmptySlot>,
     #[br(magic = b"\xa3_\x02\x00")]
     pub ranked: Bool,
@@ -288,6 +288,7 @@ pub struct Replay {
 
 #[binrw]
 #[derive(Serialize, Debug)]
+#[br(import(major: u16))]
 pub struct Player {
     pub dlc_id: u32,
     pub color_id: i32,
@@ -312,10 +313,13 @@ pub struct Player {
     pub prefer_random: Bool,
     pub custom_ai: u8,
     pub handicap: [u8; 8],
+    #[br(if(major >= 64))]
+    pub unknown_de_64_19661: u32,
 }
 
 #[binrw]
 #[derive(Serialize, Debug)]
+#[br(import(major: u16))]
 pub struct EmptySlot {
     pub i0x: u32,
     pub i0a: u32,
@@ -329,6 +333,8 @@ pub struct EmptySlot {
     pub i1: u32,
     pub i2: u32,
     pub a4: [u8; 8],
+    #[br(if(major >= 64))]
+    pub unknown_de_64_19661: u32,
 }
 
 #[binrw]
