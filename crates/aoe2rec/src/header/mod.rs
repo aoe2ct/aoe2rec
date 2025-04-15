@@ -20,6 +20,7 @@ pub fn decompress(header_data: Vec<u8>) -> RecHeader {
 pub struct RecHeader {
     pub game: MyNullString,
     pub save: f32,
+    #[br(map = |x: u16| (x as f32 / 6553.6).round() as u16)]
     pub version_minor: u16,
     pub version_major: u16,
     pub build: u32,
