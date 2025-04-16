@@ -231,6 +231,14 @@ pub struct LenString {
     value: Vec<u8>,
 }
 
+// TODO: Implement this with a generic?
+#[binrw]
+pub struct LenString16 {
+    length: u16,
+    #[br(count = length)]
+    value: Vec<u8>,
+}
+
 #[binrw]
 #[derive(Clone)]
 pub struct DeString {
@@ -296,6 +304,22 @@ impl Serialize for LenString {
     {
         let strvalue = std::string::String::from_utf8_lossy(&self.value);
         serializer.serialize_str(&strvalue)
+    }
+}
+
+impl Serialize for LenString16 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let strvalue = std::string::String::from_utf8_lossy(&self.value);
+        serializer.serialize_str(&strvalue)
+    }
+}
+
+impl std::fmt::Debug for LenString16 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", std::string::String::from_utf8_lossy(&self.value))
     }
 }
 

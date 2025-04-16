@@ -1,7 +1,9 @@
 mod ai;
 mod map;
 
-use crate::{read_strings_of_length, write_len_and_string, Bool, DeString, MyNullString};
+use crate::{
+    read_strings_of_length, write_len_and_string, Bool, DeString, LenString16, MyNullString,
+};
 use ai::{AIFile, AIInfo};
 use binrw::io::Cursor;
 use binrw::{binrw, BinReaderExt};
@@ -349,7 +351,7 @@ pub struct Initial {
     pub particles: Vec<u8>,
     pub identifier: u32,
     #[serde(skip_serializing)]
-    #[br(count = num_players)]
+    #[br(count = 1, args { inner: (num_players,) })]
     pub players: Vec<PlayerInit>,
     #[serde(skip_serializing)]
     pub unknown1: [u8; 21],
@@ -357,9 +359,63 @@ pub struct Initial {
 
 #[binrw]
 #[derive(Serialize, Debug)]
+#[br(import(num_players: u8))]
 pub struct PlayerInit {
     pub player_type: u8,
+    #[br(dbg)]
     #[serde(skip_serializing)]
     pub unknown1: u8,
-    // TODO: Finish implementing
+    #[serde(skip_serializing)]
+    #[br(count = num_players)]
+    pub their_diplomacy: Vec<u8>,
+    #[br(count = num_players)]
+    pub own_diplomacy: Vec<i32>,
+    pub allied_los: u32,
+    pub allied_victory: Bool,
+    pub player_name: LenString16,
+    #[br(magic = b"\x16")]
+    pub header_data_count: i32,
+    #[br(magic = b"\x21")]
+    #[br(count=header_data_count)]
+    pub player_stats: Vec<f32>,
+    #[br(count=header_data_count)]
+    pub extra_player_stats: Vec<f32>,
+    pub padding: u8,
+    pub view: PlayerView,
+    pub saved_views_count: i32,
+    // #[br(if(saved_views_count > -1, vec![]), count = saved_views_count)]
+    // pub saved_views: Vec<PlayerView>,
+    pub spawn_location: Location,
+    pub culture: u8,
+    pub civilization: u8,
+    pub game_status: u8,
+    #[br(pad_after = 1)]
+    pub resigned: Bool,
+    #[br(pad_after = 1)]
+    pub player_color: u8,
+    pub unknown2: [u8; 4],
+    pub unknown3: [u32; 8],
+    pub unknown4: f32,
+    pub dev: [u32; 20],  // TODO: Finish implementing
+    pub dev1: [u32; 20], // TODO: Finish implementing
+    pub dev2: [u32; 20], // TODO: Finish implementing
+    pub dev3: [i32; 20], // TODO: Finish implementing
+    pub dev4: [i32; 20], // TODO: Finish implementing
+    pub dev5: [i32; 20], // TODO: Finish implementing
+    pub dev6: [i32; 20], // TODO: Finish implementing
+    pub dev7: [i32; 20], // TODO: Finish implementing
+}
+
+#[binrw]
+#[derive(Serialize, Debug)]
+pub struct PlayerView {
+    pub camera_x: f32,
+    pub camera_y: f32,
+}
+
+#[binrw]
+#[derive(Serialize, Debug)]
+pub struct Location {
+    pub x: u16,
+    pub y: u16,
 }
