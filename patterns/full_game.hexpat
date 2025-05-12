@@ -38,16 +38,26 @@ struct Chat {
   std::string::SizedString<u32> text;
 };
 
+enum PostgameBlockType: u32 {
+    WorldTime = 1,
+    Leaderboards = 2
+};
+
+struct WorldTime {
+    u32 world_time;
+};
+
 struct PostgameBlock {
-    u32 identifier;
-    u32 length;
-    u32 work_time;
+    PostgameBlockType identifier;
+    match (identifier) {
+    (PostgameBlockType::WorldTime): WorldTime [[inline]];
+            (_): std::error(std::format("Unknown postgame block type: {} at 0x{:X}", u32(identifier), $));
+    }
 };
 
 struct Postgame {
-  padding[8];
-  u32 version;
-  u32 num_blocks;
+  u32 version @ std::mem::size() - 12;
+  u32 num_blocks @ std::mem::size() - 16;
   PostgameBlock blocks[num_blocks];
 };
 
@@ -90,7 +100,7 @@ struct Aoe2Save {
     u8 compressed[hlen - 8];
     u32 log_version;
     Meta meta;
-    // Operation operations[100000];
+    Operation operations1[245503];
     Operation operations[while($ < std::mem::size())];
 };
 
