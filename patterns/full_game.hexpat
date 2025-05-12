@@ -47,12 +47,18 @@ struct WorldTime {
     u32 world_time;
 };
 
+//struct PostgameBlock {
+//    PostgameBlockType identifier;
+//    match (identifier) {
+//    (PostgameBlockType::WorldTime): WorldTime [[inline]];
+//            (_): std::error(std::format("Unknown postgame block type: {} at 0x{:X}", u32(identifier), $));
+//    }
+//};
+
 struct PostgameBlock {
-    PostgameBlockType identifier;
-    match (identifier) {
-    (PostgameBlockType::WorldTime): WorldTime [[inline]];
-            (_): std::error(std::format("Unknown postgame block type: {} at 0x{:X}", u32(identifier), $));
-    }
+    u32 identifier;
+    u32 length;
+    u32 work_time;
 };
 
 struct Postgame {
@@ -77,7 +83,8 @@ struct Operation {
         (OperationType::Viewlock): Viewlock [[inline]];
         (OperationType::Chat): Chat [[inline]];
         (OperationType::Action): Action [[inline]];
-        (OperationType::Postgame): Postgame [[inline]];
+        // (OperationType::Postgame): Postgame [[inline]];
+        (OperationType::Postgame): break;
         (_): std::error(std::format("Unknown action type: {} at 0x{:X}", u32(type), $));
     }
 };
@@ -100,7 +107,7 @@ struct Aoe2Save {
     u8 compressed[hlen - 8];
     u32 log_version;
     Meta meta;
-    Operation operations1[245503];
+    //Operation operations1[245503];
     Operation operations[while($ < std::mem::size())];
 };
 
