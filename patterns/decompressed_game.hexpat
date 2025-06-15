@@ -7,7 +7,7 @@ import type.magic;
 
 float game_version;
 bool parse_objects = true;
-bool skip_gaia_objects = true;
+bool parse_gaia_objects = false;
 
 struct Separator {
     type::Magic<"\xA3\x5F\x02\x00">;
@@ -241,9 +241,9 @@ struct AIConfig {
         u32 unknown6[2];
         u16 unknown_max;
         u16 unknown_count;
-        
+
         u32 unknown7[3];
-        UnknownAI unknown8[unknown_count];        
+        UnknownAI unknown8[unknown_count];
         u16 unknown_max2;
         u16 unknown_count2;
         u32 unknown9[3];
@@ -1077,11 +1077,14 @@ struct KnownPlayerAttributes {
 
 
 struct UnknownInitInner {
- u16 type;
- DeString unknown1;
- DeString unknown2;
- u16 unknown3[25];
+    u16 type;
+    DeString unknown1;
+    DeString unknown2;
+    u16 unknown3[24];
+    if (game_version >= 64)
+    u16 unknown4;
 };
+// 3 * 13 * 13 * 109
 
 struct UnknownInit {
   u16 length;
@@ -1093,164 +1096,12 @@ struct UnknownInit {
   UnknownInitInner unknown6[length];
 };
 
-struct Init<auto num_players> {
-    auto init_start_position = $;
-    u8 player_type;
-    u8 unknown1;
-    u8 other_player_diplomacy[num_players];
-    u32 player_stances[num_players];
-    u32 allied_vision;
-    bool allied_victory;
-    auto init_before_name = $;    
-    u16 name_length;
-    std::string::NullString name;
-    type::Magic<"\x16">;
-    u32 num_player_attributes;
-    type::Magic<"\x21">;
-    float attrs[num_player_attributes];
-    float unknown_extra_attrs[num_player_attributes];
-    type::Magic<"\x0B">;
-    SavedView camera;
-    s32 num_saved_views;
-    if (num_saved_views > 0) {
-      SavedView saved_views[num_saved_views];
-    }
-    u16 spawn_x;
-    u16 spawn_y;
-    u8 culture;
-    u8 civilization;
-    u8 game_status;
-    bool resigned;
-    u8 unknown2;
-    u8 player_color;
-    u8 unknown3;
-    type::Magic<"\x00\x0b">;
-    u8 unknown4;
-    type::Magic<"\x0b">;
-    u32 unknown5[8];
-    float unknown6;
-    u32 unknown7[14];
-    float unknown8;
-    u32 unknown9;
-    float unknown10;
-    u32 unknown11;
-    float unknown12;
-    u32 unknown13[14];
-    float unknown14;
-    u8 unknown15[61];
-    UnknownInit unknown16;
-    
-    $ = find_start_of_objects();
-    if (parse_objects && (player_type != 2 || !skip_gaia_objects)) {
-    Object objects[while(std::mem::read_unsigned($, 1) != 0x00)];
-        type::Magic<"\x00\x0B">;
-        if(player_type != 2) {
-            u32 sleeping_size;
-            u32 sleeping_grow;
-            Object sleeping_objects[while(std::mem::read_unsigned($, 1) != 0x00)];
-            type::Magic<"\x00\x0B">;
-            u32 doppel_size;
-            u32 doppel_grow;
-            Object doppel_objects[while(std::mem::read_unsigned($, 1) != 0x00)];
-            type::Magic<"\x00\x0B">;
-        }
-    }
-    if (other_player_diplomacy[num_players -1] == 0) { // Last player parsed, don't set the position
-        break;
-    }
-    auto new_position = find_next_player(num_player_attributes, init_before_name - init_start_position);
-    if (new_position == -1) {
-        break;
-    }
-    $ = new_position;
-    std::print(std::format("Player after {} at 0x{:x}", name, $));
- };
- 
- fn find_next_player(u32 num_player_attributes, u32 backtrack) {
-     auto loc = std::mem::find_sequence_in_range(0, $, std::mem::size(), 0x16, u8(num_player_attributes));
-     if (loc > std::mem::size()) {
-      return -1;
-     }
-     u16 name_len = 1;
-     u8 offset = 3;
-     while (true) {
-        auto counter = std::mem::read_unsigned(loc - offset, 2);
-        
-        if (counter == name_len) {
-            break;
-        } else {
-            name_len = name_len + 1;
-            offset = offset + 1;
-        }
-     }
-     return loc - offset - backtrack;
- };
-
-struct Rec {
-    std::string::NullString rec_version;
-    float checker;
-    u16 version_minor;
-    u16 version_major;
-    game_version = std::string::parse_float(std::format("{}.{}", version_major, version_minor));
-    u32 build;
-    s32 timestamp;
-    u16 version[2];
-    u16 interval_version[2];
-    LobbySettings lobby_settings;
-    AIConfig ai_config;
-    Replay replay;
-    MapInfo map_info;
-    u32 restore_time;
-    u32 particles_count;
-    u8 particles[particles_count * 27];
-    u32 identifier;
-    Init<replay.num_players> players[replay.num_players];
-};
-
-Rec savegame @ 0x00;
-//game_version = 64;
-
-//float float_at_0x769F9 @ 0x769F9;
-//u32 u32_at_0x76AC2 @ 0x76AC2;
-//UnknownInit unknowninit_at_0x76AC2 @ 0x76AC2;
-//float float_at_0xAE434 @ 0xAE434;
-//float float_at_0xAE50D @ 0xAE50D;
-//float float_at_0xAE5E6 @ 0xAE5E6;
-
-
-//float float_at_0x9A64F @ 0x9A64F;
-
 struct UnknownInit2 {
   u32 count;
   u32 unknown[count];
 };
 
-//UnknownInit2 unknowninit2_at_0x97E17 @ 0x97E17;
-
-// Gaia: 0x756D2 - 0x1A517B - 1243818 bytes 
-//u32 gaia_start_count @ 0x756CE;
-//u8 gaia[gaia_start_count * 30] @ 0x756CE;
-//u8 end @ $;
-//Init<3> lemon_toaster @ 0x1A517C;
-//Init<3> gaia @ 0x756D2;
-//Init<3> beargwyn @ 0x2482FE;
-
-//u32 is_it_count_objects @ 0x1A6497;
-//u32 maybe_another_count @ 0x1A6578;
-
-// after player header
-// 191
-// 68
-struct UnknownPlayerInitAfterHeader {
- u8 player_id;
- DeString unknown1;
- DeString unknown2;
- u8 unknown3[51];
-};
-//UnknownPlayerInitAfterHeader unknownplayerinitafterheader_at_0x1A658D[maybe_another_count] @ 0x1A658D;
-
-
-struct UnknownMoving {
+struct InitMoving {
   u32 x;
   u32 y;
   u32 z;
@@ -1266,14 +1117,14 @@ struct Armor {
   s16 value;
 };
 
-struct UnknownBaseUnit {
+struct InitBaseUnit {
 };
 
-struct UnknownAnimatedUnit {
+struct InitAnimatedUnit {
   u32 unknown1;
 };
 
-struct UnknownBaseOffensive {
+struct InitBaseOffensive {
   float speed;
   u32 unknown1;
   s16 unknown2;
@@ -1311,7 +1162,7 @@ struct UnknownBaseOffensive {
   }
 };
 
-struct UnknownCombat : UnknownBaseOffensive {
+struct InitCombat : InitBaseOffensive {
 
   Resource resource_type_1;
   s16 cost_1;
@@ -1326,17 +1177,17 @@ struct UnknownCombat : UnknownBaseOffensive {
   u8 unknown23[61];
 };
 
-struct UnknownMissile : UnknownBaseOffensive {
+struct InitMissile : InitBaseOffensive {
   u8 unknown20[3];
   float unknown21;
 };
 
-struct UnknownBuilding : UnknownCombat {
+struct InitBuilding : InitCombat {
   u8 unknown24;
   s16 unknown25[6];
 };
 
-struct UnknownObject {
+struct InitObject {
   u8 u1;
   UnitType type;
   u16 id[4];
@@ -1352,26 +1203,24 @@ struct UnknownObject {
   u16 u9;
   if (game_version >= 64) {
     u16 u10[2];
-    u8 u10;
-    u32 u11;
+    u8 u11;
+    u32 u12;
   }
   DeString unit_name;
   match (type) {
-    (10): UnknownBaseUnit [[inline]];
-    (20): UnknownAnimatedUnit [[inline]];
-    (25): UnknownAnimatedUnit [[inline]];
-    (UnitType::MovingUnit): UnknownMoving [[inline]];
-    (UnitType::CombatUnit): UnknownCombat [[inline]];
-    (UnitType::MissileUnit): UnknownMissile [[inline]];
-    (UnitType::BuildingUnit): UnknownBuilding [[inline]];
+    (10): InitBaseUnit [[inline]];
+    (20): InitAnimatedUnit [[inline]];
+    (25): InitAnimatedUnit [[inline]];
+    (UnitType::MovingUnit): InitMoving [[inline]];
+    (UnitType::CombatUnit): InitCombat [[inline]];
+    (UnitType::MissileUnit): InitMissile [[inline]];
+    (UnitType::BuildingUnit): InitBuilding [[inline]];
     (_): std::error("Unknown type");
   }
   u8 u20;
 };
 
-//UnknownObject objects[2319] @ 0x9A354;
-
-struct UnknownMap {
+struct InitMap {
   u32 size_x;
   u32 size_y;
   u32 unknown1;
@@ -1380,22 +1229,188 @@ struct UnknownMap {
   u32 unknown3[11];
 };
 
-//UnknownMap umap @ 0x11F65B;
+struct UnknownGaia {
+    u8 unknown1[79];
+    DeString unknown2;
+    DeString unknown3;
+    u8 unknown[41];
+};
 
-//UnknownObject archer[2] @ 0x9A65C;
-//UnknownObject hand_cannoneer @ 0x9A82A;
-//UnknownObject not_cavarcher @ 0x9BE06;
-//UnknownObject knight @ 0x9CC54;
-//UnknownObject scout @ 0xB4895;
-//UnknownObject mangonel @ 0xAC1A3;
-//UnknownObject objects_lemontoaster[1895] @ 0x1C9C4E;
-//UnknownMap umap2 @ 0x23F10B;
-//UnknownObject unknownobject_at_0x395595[1895] @ 0x395595;
-//UnknownMap umap @ 0x40AA52;
-//UnknownMap unknownmap_at_0x11F658 @ 0x11F658;
-//Object object_at_0x12671B[1802] @ 0x12671B;
-//Object object_at_0x37099F[2] @ 0x37099B;
-//Object object_at_0x33F863 @ 0x33F863;
-//Object object_at_0x33FA9B[1568] @ 0x33FA9B;
-//Object object_at_0x2FF0CA @ 0x2FF0CA;
-//UnknownInit2 unknowninit2_at_0x97D5B @ 0x97D5B;
+struct UnknownGaia2 {
+    u8 unknown[128];
+};
+
+struct Init<auto num_players> {
+    auto init_start_position = $;
+    u8 player_type;
+    u8 unknown1;
+    u8 other_player_diplomacy[num_players];
+    u32 player_stances[num_players];
+    u32 allied_vision;
+    bool allied_victory;
+    auto init_before_name = $;
+    u16 name_length;
+    std::string::NullString name;
+    type::Magic<"\x16">;
+    u32 num_player_attributes;
+    type::Magic<"\x21">;
+    float attrs[num_player_attributes];
+    float unknown_extra_attrs[num_player_attributes];
+    type::Magic<"\x0B">;
+    SavedView camera;
+    s32 num_saved_views;
+    if (num_saved_views > 0) {
+        SavedView saved_views[num_saved_views];
+    }
+    u16 spawn_x;
+    u16 spawn_y;
+    u8 culture;
+    u8 civilization;
+    u8 game_status;
+    bool resigned;
+    u8 unknown2;
+    u8 player_color;
+    u8 unknown3;
+    type::Magic<"\x00\x0b">;
+    u8 unknown4;
+    type::Magic<"\x0b">;
+    u32 unknown5[2];
+    u32 unknown_count;
+    u32 unkonwn_vals[unknown_count];
+    u32 unknown6[5];
+    float unknown7;
+    u32 unknown8[14];
+    float unknown9;
+    u32 unknown10;
+    float unknown11;
+    u32 unknown12;
+    float unknown13;
+    u32 unknown14[14];
+    float unknown15;
+    u8 unknown16[61];
+    UnknownInit unknown17;
+    u16 unknown18;
+    u16 unknown_count_2;
+    u32 unknown_vals_2[unknown_count_2];
+    u8 unknown19[59408];
+    u32 unknown_vals_3[unknown_count_2];
+    u16 unknown20;
+    type::Magic<"\x0B"> sep[2];
+    u32 unknown21[while(std::mem::read_unsigned($, 1) != 0x0B)];
+    type::Magic<"\x0B">;
+    UnknownInit2 unknown22;
+    type::Magic<"\x0B">;
+    InitObject initial_objects[while(std::mem::read_unsigned($, 1) != 0x0B)];
+    type::Magic<"\x0B">;
+    InitMap initial_map;
+    type::Magic<"\x0B\x00">;
+    u32 unknown23;
+    type::Magic<"\x02\x00\x00">;
+    if (parse_objects) {
+        if(player_type != 2 || parse_gaia_objects) {
+            Object objects[while(std::mem::read_unsigned($, 1) != 0x00)];
+            type::Magic<"\x00\x0B">;
+        }
+        if(player_type != 2) {
+            u32 sleeping_size;
+            u32 sleeping_grow;
+            Object sleeping_objects[while(std::mem::read_unsigned($, 1) != 0x00)];
+            type::Magic<"\x00\x0B">;
+            u32 doppel_size;
+            u32 doppel_grow;
+            Object doppel_objects[while(std::mem::read_unsigned($, 1) != 0x00)];
+            type::Magic<"\x00\x0B">;
+            type::Magic<"\x00\x0B">;
+            u32 unknown24[6];
+            type::Magic<"\x00\x0B">;
+        } else if (parse_gaia_objects) {
+            // This part has variable lengths, still to be figured out.
+            // u8 unknown24[2970];
+            // type::Magic<"\x0B">;
+            // UnknownGaia unknown_gaia[4];
+            // u16 unknown25[2];
+            // type::Magic<"\x0B">;
+        }
+    }
+
+    if (other_player_diplomacy[num_players -1] != 0) { // Only set the position if it's not the last player
+        auto new_position = find_next_player(num_player_attributes, init_before_name - init_start_position);
+        if (new_position != -1) {
+            $ = new_position;
+            std::print(std::format("Player after {} at 0x{:x}", name, $));
+        }
+    }
+};
+ 
+fn find_next_player(u32 num_player_attributes, u32 backtrack) {
+    auto loc = std::mem::find_sequence_in_range(0, $, std::mem::size(), 0x16, u8(num_player_attributes));
+    if (loc > std::mem::size()) {
+        return -1;
+    }
+    u16 name_len = 1;
+    u8 offset = 3;
+    while (true) {
+        auto counter = std::mem::read_unsigned(loc - offset, 2);
+
+        if (counter == name_len) {
+            break;
+        } else {
+            name_len = name_len + 1;
+            offset = offset + 1;
+        }
+    }
+    return loc - offset - backtrack;
+};
+
+struct Achievements {
+    float version;
+    s32 entry_count;
+    u8 unknown1[5];
+    u32 entries[entry_count * 11];
+    u32 achievement_count;
+    u8 unknown3[8];
+    u32 achievement_points[achievement_count * 8];
+};
+
+struct Scenario {
+    float unknown;
+    u32 maybe_next_uid;
+    u32 maybe_scenario_version;
+    u8 unknown2[4643];
+    std::string::SizedString<u16> instructions;
+};
+
+struct Rec {
+    std::string::NullString rec_version;
+    float checker;
+    u16 version_minor;
+    u16 version_major;
+    game_version = std::string::parse_float(std::format("{}.{}", version_major, version_minor));
+    u32 build;
+    s32 timestamp;
+    u16 version[2];
+    u16 interval_version[2];
+    LobbySettings lobby_settings;
+    AIConfig ai_config;
+    Replay replay;
+    MapInfo map_info;
+    u32 restore_time;
+    u32 particles_count;
+    u8 particles[particles_count * 27];
+    u32 identifier;
+    Init<replay.num_players> players[replay.num_players];
+    Achievements achievements[replay.num_players];
+    Scenario scenario;
+};
+
+Rec savegame @ 0x00;
+//game_version = 64;
+
+struct UnknownPlayerInitAfterHeader {
+ u8 player_id;
+ DeString unknown1;
+ DeString unknown2;
+ u8 unknown3[51];
+};
+//UnknownPlayerInitAfterHeader unknownplayerinitafterheader_at_0x1A658D[maybe_another_count] @ 0x1A658D;
+
