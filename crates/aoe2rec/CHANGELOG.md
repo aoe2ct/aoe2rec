@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.2.1...aoe2rec-v0.2.2) - 2025-08-13
+
+### Other
+
+- Add missing files
+- Add first part of changes to be compatible with savegames >= 66
+- Add more fields to the Initial Player structure
+- Improve parsing of minor version
+
 ## [0.2.1](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.2.0...aoe2rec-v0.2.1) - 2025-04-11
 
 ### Added
