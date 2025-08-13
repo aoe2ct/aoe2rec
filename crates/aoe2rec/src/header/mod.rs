@@ -62,7 +62,7 @@ pub struct GameSettings {
     pub speed: f32,
     pub treaty_length: u32,
     pub population_limit: u32,
-    #[bw(calc(players.len().try_into().unwrap()))]
+    // #[bw(calc(players.len().try_into().unwrap()))]
     pub n_players: u32,
     pub unused_player_color: u32,
     pub victory_amount: i32,

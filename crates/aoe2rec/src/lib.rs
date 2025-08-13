@@ -266,6 +266,12 @@ impl From<&String> for DeString {
     }
 }
 
+impl Into<String> for DeString {
+    fn into(self) -> String {
+        std::string::String::from_utf8_lossy(&self.value).to_string()
+    }
+}
+
 #[binrw]
 #[derive(Debug, Clone)]
 pub struct MyNullString {
