@@ -65,6 +65,8 @@ struct Player {
     u8 ai_civ_name_index;
     DeString ai_name;
     DeString name;
+    if (game_version >= 66)
+    DeString name2;
     u32 player_type;
     u32 profile_id;
     u8 ai_unknown[4];
@@ -143,11 +145,15 @@ struct LobbySettings {
     bool handicap;
     bool unknown2;
     Separator;
+    if (game_version < 66)
     Player players[n_players];
+    if (game_version >= 66)
+    Player players[8];
     u8 unknown3[9];
     bool fog_of_war;
     bool cheat_notification;
     bool colored_chat;
+    if (game_version < 66)
     EmptySlot empty_slots[8 - n_players];
     Separator;
     bool ranked;
@@ -205,6 +211,8 @@ struct LobbySettings {
     u8 unknown19[8];
     if (game_version >= 63)
     u8 unknown24[5];
+    if (game_version >= 66)
+    u8 unknown_66_3[16];
     DeString unknown20;
     u8 unknown21[5];
     u8 unknown22;
@@ -1080,19 +1088,29 @@ struct UnknownInitInner {
     u16 type;
     DeString unknown1;
     DeString unknown2;
-    u16 unknown3[24];
+    // TODO: I WAS HERE
+    u16 unknown3[16];
+    if (game_version >= 66) {
+      u16 unknown_count;
+      u8 unknown6[unknown_count * 13];
+      u8 unknown7;
+    }
+    if (game_version < 66) {
+      u16 unknown6[8];
+    }
     if (game_version >= 64)
     u16 unknown4;
+    if (game_version >= 66)
+    u8 unknown5[12];
 };
-// 3 * 13 * 13 * 109
 
 struct UnknownInit {
   u16 length;
   u32 unknown1;
   u32 unknown2;
-  u32 unknown3;
-  u32 unknown4;
-  u16 unknown5;
+  u8 unknown3[5];
+  if (game_version < 66)
+  u8 unknown4[5];
   UnknownInitInner unknown6[length];
 };
 
@@ -1292,7 +1310,10 @@ struct Init<auto num_players> {
     u16 unknown18;
     u16 unknown_count_2;
     u32 unknown_vals_2[unknown_count_2];
+    if (game_version < 66)
     u8 unknown19[59408];
+    if (game_version >= 66)
+    u8 unknown19[60061];
     u32 unknown_vals_3[unknown_count_2];
     u16 unknown20;
     type::Magic<"\x0B"> sep[2];
@@ -1404,7 +1425,7 @@ struct Rec {
 };
 
 Rec savegame @ 0x00;
-//game_version = 64;
+game_version = 66;
 
 struct UnknownPlayerInitAfterHeader {
  u8 player_id;
@@ -1414,3 +1435,14 @@ struct UnknownPlayerInitAfterHeader {
 };
 //UnknownPlayerInitAfterHeader unknownplayerinitafterheader_at_0x1A658D[maybe_another_count] @ 0x1A658D;
 
+struct Unk {
+  u32 numbers1[5];
+  u8 unknown1;
+  u8 count1;
+  u32 vals1[count1];
+  u8 count2;
+  u32 vals2[count2];
+  u8 count3;
+  u32 vals3[count3];
+  u32 numbers[21];
+};

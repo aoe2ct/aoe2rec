@@ -1,10 +1,12 @@
 mod actions;
 mod header;
+pub mod minimal;
 pub mod summary;
+mod tests;
 
 use binrw::helpers::until_eof;
 use binrw::io::{BufReader, Cursor, SeekFrom};
-use binrw::{binrw, BinReaderExt, BinResult, NullString};
+use binrw::{binrw, BinReaderExt, BinResult, BinWriterExt, NullString};
 use header::{decompress, RecHeader};
 use serde::Serialize;
 use std::error::Error;
@@ -240,17 +242,19 @@ pub struct LenString16 {
 }
 
 #[binrw]
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct DeString {
     #[br(magic = b"\x60\x0A")]
+    #[bw(magic = b"\x60\x0A")]
+    #[bw(calc(value.len().try_into().unwrap()))]
     length: u16,
     #[br(count = length)]
     value: Vec<u8>,
 }
 
-impl Into<String> for DeString {
-    fn into(self) -> String {
-        std::string::String::from_utf8_lossy(&self.value).to_string()
+impl From<&DeString> for String {
+    fn from(value: &DeString) -> Self {
+        std::string::String::from_utf8_lossy(&value.value).to_string()
     }
 }
 
@@ -258,7 +262,6 @@ impl From<&String> for DeString {
     fn from(value: &String) -> Self {
         Self {
             value: value.as_bytes().to_vec(),
-            length: value.len().try_into().unwrap(),
         }
     }
 }
@@ -403,12 +406,11 @@ fn read_strings_of_length() -> BinResult<Vec<DeString>> {
     Ok(strings)
 }
 
-#[binrw::writer()]
-fn write_len_and_string(_strings: &Vec<DeString>) -> BinResult<()> {
-    // for string in strings {
-    //     writer.write_type(&u32::try_from(string.len()).unwrap(), endian)?;
-    //     writer.write_type(&string, endian)?;
-    // }
-    // writer.write_type(&0u32, endian)?;
+#[binrw::writer(writer, endian)]
+fn write_len_and_string(strings: &Vec<DeString>) -> BinResult<()> {
+    for string in strings {
+        writer.write_type(&string, endian)?;
+    }
+    writer.write_type(&0u32, endian)?;
     Ok(())
 }

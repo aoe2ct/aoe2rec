@@ -5,14 +5,14 @@ use crate::{
     read_strings_of_length, write_len_and_string, Bool, DeString, LenString16, MyNullString,
 };
 use ai::{AIFile, AIInfo};
-use binrw::io::Cursor;
+use binrw::io::{BufReader, Cursor};
 use binrw::{binrw, BinReaderExt};
 use map::MapInfo;
 use serde::Serialize;
 
 pub fn decompress(header_data: Vec<u8>) -> RecHeader {
     let (header, _) = yazi::decompress(&header_data, yazi::Format::Raw).unwrap();
-    let mut hreader = Cursor::new(header);
+    let mut hreader = BufReader::new(Cursor::new(header));
     let parsed_header: RecHeader = hreader.read_le().unwrap();
     return parsed_header;
 }
@@ -34,7 +34,7 @@ pub struct RecHeader {
     pub ai_config: AIConfig,
     pub replay: Replay,
     pub map_info: MapInfo,
-    #[br(args(replay.num_players))]
+    #[br(args(replay.num_players, version_major), dbg)]
     pub initial: Initial,
 }
 
@@ -43,6 +43,7 @@ pub struct RecHeader {
 #[br(import(major: u16))]
 pub struct GameSettings {
     pub game_options_version: u32,
+    #[bw(calc(dlcs.len().try_into().unwrap()))]
     pub n_dlc: u32,
     #[br(count=n_dlc)]
     pub dlcs: Vec<u32>,
@@ -57,14 +58,17 @@ pub struct GameSettings {
     pub ending_age_id: u32,
     pub game_type: u32,
     #[br(magic = b"\xa3_\x02\x00\xa3_\x02\x00")]
+    #[bw(magic = b"\xa3_\x02\x00\xa3_\x02\x00")]
     pub speed: f32,
     pub treaty_length: u32,
     pub population_limit: u32,
+    #[bw(calc(players.len().try_into().unwrap()))]
     pub n_players: u32,
     pub unused_player_color: u32,
     pub victory_amount: i32,
     pub unknown_field: u8,
     #[br(magic = b"\xa3_\x02\x00")]
+    #[bw(magic = b"\xa3_\x02\x00")]
     pub trade_enabled: Bool,
     pub team_bonus_disabled: Bool,
     pub random_positions: Bool,
@@ -85,16 +89,18 @@ pub struct GameSettings {
     pub handicap: Bool,
     pub unk: Bool,
     #[br(magic = b"\xa3_\x02\x00")]
-    #[br(count = n_players, args { inner: (major,)})]
+    #[bw(magic = b"\xa3_\x02\x00")]
+    #[br(count = if major < 66 { n_players } else { 8 }, args { inner: (major,)})]
     pub players: Vec<Player>,
     pub unknown: [u8; 9],
     pub fog_of_war: Bool,
     pub cheat_notifications: Bool,
     pub colored_chat: Bool,
     #[serde(skip_serializing)]
-    #[br(count = 8 - n_players, args { inner: (major,)})]
+    #[br(if(major < 66), count = 8 - n_players, args { inner: (major,)})]
     pub empty_slots: Vec<EmptySlot>,
     #[br(magic = b"\xa3_\x02\x00")]
+    #[bw(magic = b"\xa3_\x02\x00")]
     pub ranked: Bool,
     pub allow_specs: Bool,
     pub lobby_visibility: u32,
@@ -234,6 +240,8 @@ pub struct GameSettings {
     #[serde(skip_serializing)]
     #[br(if(major >= 63))]
     pub unknown24: Option<[u8; 5]>,
+    #[br(if(major >= 66))]
+    pub unknown26: Option<[u8; 16]>,
     #[serde(skip_serializing)]
     pub unknown20: DeString,
     #[serde(skip_serializing)]
@@ -309,6 +317,8 @@ pub struct Player {
     pub ai_civ_name_index: u8,
     pub ai_name: DeString,
     pub name: DeString,
+    #[br(if(major >= 66))]
+    pub name2: DeString,
     pub player_type: u32,
     pub profile_id: u32,
     pub ai: [u8; 4],
@@ -342,7 +352,7 @@ pub struct EmptySlot {
 
 #[binrw]
 #[derive(Serialize, Debug)]
-#[br(import(num_players: u8))]
+#[br(import(num_players: u8, major: u16))]
 pub struct Initial {
     pub restore_time: u32,
     pub num_particles: u32,
@@ -351,18 +361,56 @@ pub struct Initial {
     pub particles: Vec<u8>,
     pub identifier: u32,
     #[serde(skip_serializing)]
-    #[br(count = 1, args { inner: (num_players,) })]
+    #[br(count = 1, args { inner: (num_players,major) })]
     pub players: Vec<PlayerInit>,
     #[serde(skip_serializing)]
     pub unknown1: [u8; 21],
 }
+#[binrw]
+#[derive(Serialize, Debug, Default)]
+pub struct InnerUnknownPlayerStruct2 {
+    unknown_count: u16,
+    #[br(count = unknown_count * 13)]
+    unknown1: Vec<u8>,
+    unknown2: u8,
+}
 
 #[binrw]
 #[derive(Serialize, Debug)]
-#[br(import(num_players: u8))]
+#[br(import(major: u16))]
+pub struct InnerUnknownPlayerStruct {
+    pub unknown_type: u16,
+    pub unknown1: DeString,
+    pub unknown2: DeString,
+    pub unknown3: [u16; 16],
+    #[br(if(major >= 66))]
+    pub unknown5: InnerUnknownPlayerStruct2,
+    #[br(if(major < 66))]
+    pub unknown6: [u16; 8],
+    #[br(if(major >= 64))]
+    pub unknown4: u16,
+    #[br(if(major >= 66))]
+    pub unknown7: [u8; 12],
+}
+
+#[binrw]
+#[derive(Serialize, Debug)]
+#[br(import(major: u16))]
+pub struct UnknownPlayerStruct {
+    pub sub_count: u16,
+    pub unknown1: [u32; 2],
+    pub unknown2: [u8; 5],
+    #[br(if(major < 66))]
+    pub unknown3: [u8; 5],
+    #[br(count=sub_count, args { inner: (major,) })]
+    pub unknown_inner: Vec<InnerUnknownPlayerStruct>,
+}
+
+#[binrw]
+#[derive(Serialize, Debug)]
+#[br(import(num_players: u8, major: u16))]
 pub struct PlayerInit {
     pub player_type: u8,
-    #[br(dbg)]
     #[serde(skip_serializing)]
     pub unknown1: u8,
     #[serde(skip_serializing)]
@@ -383,8 +431,8 @@ pub struct PlayerInit {
     pub padding: u8,
     pub view: PlayerView,
     pub saved_views_count: i32,
-    // #[br(if(saved_views_count > -1, vec![]), count = saved_views_count)]
-    // pub saved_views: Vec<PlayerView>,
+    #[br(count = if saved_views_count < 0 { 0 } else { saved_views_count })]
+    pub saved_views: Vec<PlayerView>,
     pub spawn_location: Location,
     pub culture: u8,
     pub civilization: u8,
@@ -393,9 +441,20 @@ pub struct PlayerInit {
     pub resigned: Bool,
     #[br(pad_after = 1)]
     pub player_color: u8,
-    pub unknown2: [u8; 4],
-    pub unknown3: [u32; 8],
-    pub unknown4: f32,
+    #[serde(skip_serializing)]
+    #[br(magic = b"\x00\x0B")]
+    pub unknown3: u8,
+    #[serde(skip_serializing)]
+    #[br(magic = b"\x0B")]
+    pub unknown4: [u32; 8],
+    #[serde(skip_serializing)]
+    pub unknown5: f32,
+    #[serde(skip_serializing)]
+    #[br(count = 197)]
+    pub unknown6: Vec<u8>,
+    #[serde(skip_serializing)]
+    #[br(args(major))]
+    pub unknown_struct: UnknownPlayerStruct,
     pub dev: [u32; 20],  // TODO: Finish implementing
     pub dev1: [u32; 20], // TODO: Finish implementing
     pub dev2: [u32; 20], // TODO: Finish implementing
