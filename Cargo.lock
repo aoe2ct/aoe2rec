@@ -69,7 +69,7 @@ dependencies = [
 
 [[package]]
 name = "aoe2js"
-version = "0.1.10"
+version = "0.1.11"
 dependencies = [
  "aoe2rec",
  "clap",
@@ -91,7 +91,7 @@ dependencies = [
 
 [[package]]
 name = "aoe2rec"
-version = "0.2.3"
+version = "0.2.4"
 dependencies = [
  "binrw",
  "bytes",
@@ -101,7 +101,7 @@ dependencies = [
 
 [[package]]
 name = "aoe2rec-js"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "aoe2rec",
  "bytes",
@@ -115,7 +115,7 @@ dependencies = [
 
 [[package]]
 name = "aoe2rec-py"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "aoe2rec",
  "bytes",
