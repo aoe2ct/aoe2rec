@@ -90,8 +90,10 @@ pub struct GameSettings {
     pub unk: Bool,
     #[br(magic = b"\xa3_\x02\x00")]
     #[bw(magic = b"\xa3_\x02\x00")]
-    #[br(count = if major < 66 { n_players } else { 8 }, args { inner: (major,)})]
+    #[br(count = n_players, args { inner: (major,)})]
     pub players: Vec<Player>,
+    #[br(if(major >= 66), count = 8 - n_players, args { inner: (major,)})]
+    pub empty_player_slots: Vec<Player>,
     pub unknown: [u8; 9],
     pub fog_of_war: Bool,
     pub cheat_notifications: Bool,
