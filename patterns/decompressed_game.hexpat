@@ -418,6 +418,9 @@ struct StaticObject<auto type> {
     u8 current_damage;
     u8 damaged_lately_timer;
     u8 under_attack;
+    if (game_version >= 66) {
+      u8 unknown_de_66_3_1[2];
+    }
     s32 group_id;
     bool roo_already_called;
     u8 unknown1[17];
@@ -425,7 +428,7 @@ struct StaticObject<auto type> {
     u16 has_object_props;
     if (has_object_props == 1) {
         // TODO
-        type::Magic("\xAA\xBB\xCC");
+        type::Magic<"\xAA\xBB\xCC">;
         std::error("object_props not implemented yet");
     } else {
         u8 has_sprite_list;
@@ -483,6 +486,8 @@ struct BaseMovingObject<auto type> : AnimatedObject<type> {
     float angle;
     u8 move_byte;
     u32 turn_towards_time;
+    if (game_version >= 66)
+    u32 unknown_de_66_3_2;
     u8 waiting_to_move;
     u8 wait_delays_count;
     u8 on_ground;
@@ -1085,33 +1090,29 @@ struct KnownPlayerAttributes {
 
 
 struct UnknownInitInner {
-    u16 type;
-    DeString unknown1;
-    DeString unknown2;
-    // TODO: I WAS HERE
-    u16 unknown3[16];
+    u32 unknown1;
+    u8 unknown2[6];
+    if (game_version < 66)
+    u8 unknown3[5];
+    u8 type;
+    DeString unknown4;
+    DeString unknown5;
+    u16 unknown6[16];
     if (game_version >= 66) {
       u16 unknown_count;
-      u8 unknown6[unknown_count * 13];
-      u8 unknown7;
-    }
-    if (game_version < 66) {
-      u16 unknown6[8];
+      u8 unknown7[unknown_count * 13];
+      u8 unknown8;
     }
     if (game_version >= 64)
-    u16 unknown4;
+    u16 unknown9[2];
     if (game_version >= 66)
-    u8 unknown5[12];
+    u8 unknown10;
 };
 
 struct UnknownInit {
   u16 length;
   u32 unknown1;
-  u32 unknown2;
-  u8 unknown3[5];
-  if (game_version < 66)
-  u8 unknown4[5];
-  UnknownInitInner unknown6[length];
+  UnknownInitInner unknown2[length];
 };
 
 struct UnknownInit2 {
@@ -1123,6 +1124,9 @@ struct InitMoving {
   u32 x;
   u32 y;
   u32 z;
+  if (game_version >= 66) {
+   u8 unknown1[7];
+  }
 };
 
 struct AttackBonus {
@@ -1147,11 +1151,16 @@ struct InitBaseOffensive {
   u32 unknown1;
   s16 unknown2;
   s16 unknown3;
+  if (game_version >= 66) {
+    u8 unknown_ibo_23[7];
+  }
   float line_of_sight;
   float unknown4;
   float unknown5;
   if (game_version >= 64)
   u8 unknown6;
+  if (game_version >= 66)
+  u8 unknown29[13];
   u16 unknown7;
   u16 attack_bonus_count;
   AttackBonus attack_bonus[attack_bonus_count];
@@ -1178,6 +1187,9 @@ struct InitBaseOffensive {
     float unknown18;
     s16 unknown19;
   }
+  if (game_version >= 66) {
+    float unknown30[3];
+  }
 };
 
 struct InitCombat : InitBaseOffensive {
@@ -1189,10 +1201,26 @@ struct InitCombat : InitBaseOffensive {
   s16 cost_2;
   s16 resource_unknown_2;
   s16 unknown20[3];
+  if (game_version >= 66) {
+    u16 unknown_count;
+  }
   s16 build_time;
-  float unknown21;
-  s16 unknown22[2];
-  u8 unknown23[61];
+  if (game_version < 66) {
+    float unknown21;
+    s16 unknown22;
+  }
+  s16 unknown23;
+  u8 unknown38;
+  if (game_version >= 66) {  
+    u8 unknown31[9 * unknown_count];
+    u8 unknown32;
+  }
+  u8 unknown26;
+  u8 unknown27[60];
+  if (game_version >= 66) {
+    u16 unknown36[3];
+    float unknown37[3];
+  }
 };
 
 struct InitMissile : InitBaseOffensive {
@@ -1203,26 +1231,40 @@ struct InitMissile : InitBaseOffensive {
 struct InitBuilding : InitCombat {
   u8 unknown24;
   s16 unknown25[6];
+  if (game_version >= 66) {
+    u8 unknown_building_1[24];
+  }
 };
 
 struct InitObject {
   u8 u1;
   UnitType type;
   u16 id[4];
-  float u3;
-  u32 u4;
-  u16 u4_1;
+  u8 u2;
+  u8 u3;
+  if(game_version < 66)
+  u32 u3_1;
+  u16 u4[2];
   float u5;
   u8 u6;
   float u7[2];
   s16 u7_1[2];
   float u7_2;
-  u16 u_8[26];
+  u8 u8_0;
+  u16 u8_1[19];
+  float u8_2;
+  u16 u8_3[4];
+  u8 u8_4;
   u16 u9;
   if (game_version >= 64) {
-    u16 u10[2];
+    s16 u10[2];
     u8 u11;
     u32 u12;
+  }
+  if (game_version >= 66) {
+    s8 u21[29];
+    s8 u_count;
+    s32 u22[u_count];
   }
   DeString unit_name;
   match (type) {
@@ -1256,6 +1298,14 @@ struct UnknownGaia {
 
 struct UnknownGaia2 {
     u8 unknown[128];
+};
+
+struct UnknownSection1 {
+  u8 unknown_count;
+  u32 unknown1[unknown_count];
+  u8 unknown2[177];
+  float unknown3;
+  float unknown4;
 };
 
 struct Init<auto num_players> {
@@ -1307,15 +1357,55 @@ struct Init<auto num_players> {
     float unknown15;
     u8 unknown16[61];
     UnknownInit unknown17;
-    u16 unknown18;
-    u16 unknown_count_2;
-    u32 unknown_vals_2[unknown_count_2];
-    if (game_version < 66)
-    u8 unknown19[59408];
-    if (game_version >= 66)
-    u8 unknown19[60061];
-    u32 unknown_vals_3[unknown_count_2];
-    u16 unknown20;
+    type::Magic<"\x0B">;
+    UnknownSection1 unknown_section_1;
+    type::Magic<"\x0B">;
+    u8 unknown_section_2[209];
+    type::Magic<"\x0B">;
+    u8 unknown_section_3[40];
+    type::Magic<"\x0B">;
+    u8 unknown_section_4[65];
+    type::Magic<"\x0B">;
+    u8 unknown_section_5[85];
+    type::Magic<"\x0B">;
+    u8 unknown_section_6[545];
+    type::Magic<"\x0B">;
+    u8 unknown_section_7[970];
+    type::Magic<"\x0B">;
+    u8 unknown_section_8[2953];
+    type::Magic<"\x0B">;
+    u8 unknown_section_9[340];
+    type::Magic<"\x0B">;
+    u8 unknown_section_10[1465];
+    type::Magic<"\x0B">;
+    u8 unknown_section_11[2412];
+    type::Magic<"\x0B">;
+    u8 unknown_section_12[1883];
+    type::Magic<"\x0B">;
+    u8 unknown_section_13[5588];
+    type::Magic<"\x0B">;
+    u8 unknown_section_14[8864];
+    type::Magic<"\x0B">;
+    u8 unknown_section_15[2751];
+    type::Magic<"\x0B">;
+    u8 unknown_section_16[6962];
+    type::Magic<"\x0B">;
+    u8 unknown_section_17[685];
+    type::Magic<"\x0B">;
+    u8 unknown_section_18[1164];
+    type::Magic<"\x0B">;
+    u8 unknown_section_19[1299];
+    type::Magic<"\x0B">;
+    u8 unknown_section_20[2419];
+    type::Magic<"\x0B">;
+    u8 unknown_section_21[3391];
+    type::Magic<"\x0B">;
+    u8 unknown_section_22[963];
+    type::Magic<"\x0B">;
+    u8 unknown_section_23[14814];
+    if(player_type == 1) {
+      u8 unknown_section_23_p[4];
+    }
     type::Magic<"\x0B"> sep[2];
     u32 unknown21[while(std::mem::read_unsigned($, 1) != 0x0B)];
     type::Magic<"\x0B">;

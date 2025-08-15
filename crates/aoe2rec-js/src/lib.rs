@@ -238,7 +238,7 @@ pub struct Player {
     pub civ_id: u32,
     pub custom_civ_ids: Vec<u32>,
     pub player_type: u32,
-    pub profile_id: u32,
+    pub profile_id: i32,
     pub player_number: i32,
     pub prefer_random: bool,
     pub resigned: bool,

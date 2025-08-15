@@ -243,7 +243,11 @@ pub struct GameSettings {
     #[br(if(major >= 63))]
     pub unknown24: Option<[u8; 5]>,
     #[br(if(major >= 66))]
-    pub unknown26: Option<[u8; 16]>,
+    pub unknown_count1: u32,
+    #[br(if(major >= 66))]
+    pub unknown26: Option<[u8; 12]>,
+    #[br(count = unknown_count1)]
+    pub unknown27: Vec<u32>,
     #[serde(skip_serializing)]
     pub unknown20: DeString,
     #[serde(skip_serializing)]
@@ -322,7 +326,7 @@ pub struct Player {
     #[br(if(major >= 66))]
     pub name2: DeString,
     pub player_type: u32,
-    pub profile_id: u32,
+    pub profile_id: i32,
     pub ai: [u8; 4],
     pub player_number: i32,
     pub prefer_random: Bool,
