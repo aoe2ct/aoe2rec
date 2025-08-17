@@ -408,10 +408,10 @@ struct StaticObject<auto type> {
     float x;
     float y;
     float z;
-    u16 screen_offset_x;
-    u16 screen_offset_y;
-    u16 shadow_offset_x;
-    u16 shadow_offset_y;
+    s16 screen_offset_x;
+    s16 screen_offset_y;
+    s16 shadow_offset_x;
+    s16 shadow_offset_y;
     Resource resource;
     float amount;
     u8 worker_count;
@@ -428,7 +428,7 @@ struct StaticObject<auto type> {
     u16 has_object_props;
     if (has_object_props == 1) {
         // TODO
-        type::Magic<"\xAA\xBB\xCC">;
+        // type::Magic<"\xAA\xBB\xCC">;
         std::error("object_props not implemented yet");
     } else {
         u8 has_sprite_list;
@@ -449,6 +449,8 @@ struct StaticObject<auto type> {
     }
     u8 unknown9;
     u8 unknown10[18];
+    if (game_version >= 66)
+    u8 unknown_de_66_3_1[4];
 };
 
 struct AnimatedObject<auto type> : StaticObject<type> {
@@ -486,8 +488,6 @@ struct BaseMovingObject<auto type> : AnimatedObject<type> {
     float angle;
     u8 move_byte;
     u32 turn_towards_time;
-    if (game_version >= 66)
-    u32 unknown_de_66_3_2;
     u8 waiting_to_move;
     u8 wait_delays_count;
     u8 on_ground;
@@ -948,6 +948,8 @@ fn has_position() {
 
 struct Combat<auto type> : BaseCombat<type> {
     u8 unknown_de1[14];
+    if (game_version >= 66)
+    u8 unknown_de_66_3_1[4];
     u8 unknown_de2[16];
     u8 unknown_de3[4];
     if (game_version >= 64) {
@@ -1045,6 +1047,8 @@ struct Building<auto type> : Combat<type> {
     u8 unknown_building_de5[12];
     if (game_version >= 64)
     u32 unknown_building_de_64_4_1;
+    if (game_version >= 66)
+    u8 unknown_building_de_66_3_1[5];
 };
 
 enum ObjType : u8 {
@@ -1215,9 +1219,10 @@ struct InitCombat : InitBaseOffensive {
     u8 unknown31[9 * unknown_count];
     u8 unknown32;
   }
-  u8 unknown26;
-  u8 unknown27[60];
+  u16 unknown26;
+  u8 unknown27[58];
   if (game_version >= 66) {
+    u8 unknown38;
     u16 unknown36[3];
     float unknown37[3];
   }
@@ -1402,10 +1407,7 @@ struct Init<auto num_players> {
     type::Magic<"\x0B">;
     u8 unknown_section_22[963];
     type::Magic<"\x0B">;
-    u8 unknown_section_23[14814];
-    if(player_type == 1) {
-      u8 unknown_section_23_p[4];
-    }
+    u8 unknown_section_23[while(std::mem::read_unsigned($, 1) != 0x0B)];
     type::Magic<"\x0B"> sep[2];
     u32 unknown21[while(std::mem::read_unsigned($, 1) != 0x0B)];
     type::Magic<"\x0B">;
@@ -1514,8 +1516,8 @@ struct Rec {
     Scenario scenario;
 };
 
-Rec savegame @ 0x00;
-game_version = 66;
+// Rec savegame @ 0x00;
+// game_version = 66;
 
 struct UnknownPlayerInitAfterHeader {
  u8 player_id;
