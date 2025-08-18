@@ -222,8 +222,7 @@ namespace aoe2op {
       (GameCommand::InstantBuild): InstantBuild [[inline]];
       (GameCommand::FarmAutoqueue): FarmAutoqueue [[inline]];
       (GameCommand::FishtrapAutoqueue): FishtrapAutoqueue [[inline]];
-      // (_): std::error(std::format("Unknown game mode: {} at 0x{:X}", u8(mode), $));
-      (_): break;
+      (_): std::error(std::format("Unknown game mode: {} at 0x{:X}", u8(mode), $));
     }
   };
 
@@ -264,9 +263,10 @@ namespace aoe2op {
     float y;
     s32 target_id;
     u32 unknown2;
-    if (action_length > (selected * 4 + 20))
+    if (game_version >= 66)
     u8 unknown3;
     u32 unit_ids[selected];
+    break;
   };
 
   struct Multiqueue: BasePlayerAction {
@@ -351,7 +351,6 @@ namespace aoe2op {
       u32 unkwnown2;
     }
     u32 building_ids[selected];
-    break;
   };
 
   struct Unknown140: BasePlayerAction {
