@@ -7,7 +7,7 @@ import type.magic;
 
 float game_version;
 bool parse_objects = true;
-bool parse_gaia_objects = false;
+bool parse_gaia_objects = true;
 
 struct Separator {
     type::Magic<"\xA3\x5F\x02\x00">;
