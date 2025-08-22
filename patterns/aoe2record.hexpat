@@ -5,8 +5,9 @@ import std.mem;
 // import std.file;
 import hex.dec;
 import hex.provider;
+import hex.core;
 // import type.magic;
-u16 game_version;
+float game_version;
 import aoe2operations;
 
 struct Meta {

@@ -4,6 +4,7 @@
 #pragma loop_limit 100000
 
 import type.magic;
+import std.math;
 
 float game_version;
 bool parse_objects = true;
@@ -99,6 +100,14 @@ struct AIFile {
     u32 unknown;
     DeString name;
     u32 unknown2;
+};
+
+struct Unknown66_3Lobby {
+    u32 unknown_count;
+    u32 unknown1;
+    u32 unknown_values[unknown_count];
+    u32 unknown2;
+    u32 unknown3;
 };
 
 struct LobbySettings {
@@ -212,7 +221,7 @@ struct LobbySettings {
     if (game_version >= 63)
     u8 unknown24[5];
     if (game_version >= 66)
-    u8 unknown_66_3[16];
+    Unknown66_3Lobby unknown_66_3;
     DeString unknown20;
     u8 unknown21[5];
     u8 unknown22;
@@ -1372,6 +1381,9 @@ struct Init<auto num_players> {
     u8 unknown_section_4[65];
     type::Magic<"\x0B">;
     u8 unknown_section_5[85];
+    if (std::mem::read_unsigned($, 1) != 0x0B) {
+      u8 unknown_section_5_1[4];
+    }
     type::Magic<"\x0B">;
     u8 unknown_section_6[545];
     type::Magic<"\x0B">;
@@ -1495,10 +1507,10 @@ struct Scenario {
 
 struct Rec {
     std::string::NullString rec_version;
-    float checker;
+    float old_save_version;
     u16 version_minor;
     u16 version_major;
-    game_version = std::string::parse_float(std::format("{}.{}", version_major, version_minor));
+    game_version = version_major + (std::math::round(float(version_minor) / 65536 * 100) / 100);
     u32 build;
     s32 timestamp;
     u16 version[2];

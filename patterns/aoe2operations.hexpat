@@ -215,6 +215,10 @@ namespace aoe2op {
     u32 unknown2[2];
   };
 
+  struct DefaultStance {
+    u32 unknown1[3];
+  };
+
   struct Game: BasePlayerAction {
     GameCommand mode;
     match(mode) {
@@ -222,6 +226,7 @@ namespace aoe2op {
       (GameCommand::InstantBuild): InstantBuild [[inline]];
       (GameCommand::FarmAutoqueue): FarmAutoqueue [[inline]];
       (GameCommand::FishtrapAutoqueue): FishtrapAutoqueue [[inline]];
+      (GameCommand::DefaultStance): DefaultStance [[inline]];
       (_): std::error(std::format("Unknown game mode: {} at 0x{:X}", u8(mode), $));
     }
   };
