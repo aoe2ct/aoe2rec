@@ -65,9 +65,9 @@ struct Player {
     DeString ai_type;
     u8 ai_civ_name_index;
     DeString ai_name;
-    DeString name;
     if (game_version >= 66)
-    DeString name2;
+    DeString censored_name;
+    DeString name;
     u32 player_type;
     u32 profile_id;
     u8 ai_unknown[4];
