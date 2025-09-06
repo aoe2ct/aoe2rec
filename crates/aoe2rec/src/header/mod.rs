@@ -322,9 +322,9 @@ pub struct Player {
     pub ai_type: DeString,
     pub ai_civ_name_index: u8,
     pub ai_name: DeString,
-    pub name: DeString,
     #[br(if(major >= 66))]
-    pub name2: DeString,
+    pub censored_name: DeString,
+    pub name: DeString,
     pub player_type: u32,
     pub profile_id: i32,
     pub ai: [u8; 4],
