@@ -197,6 +197,7 @@ namespace aoe2op {
   };
 
   struct DiplomacyGame {
+    std::error("DiplomacyGame is not implemented");
     break;
   };
 
@@ -271,7 +272,6 @@ namespace aoe2op {
     if (game_version >= 66)
     u8 unknown3;
     u32 unit_ids[selected];
-    break;
   };
 
   struct Multiqueue: BasePlayerAction {
@@ -501,8 +501,8 @@ namespace aoe2op {
       (OperationType::Viewlock): Viewlock [[inline]];
       (OperationType::Chat): Chat [[inline]];
       (OperationType::Action): Action [[inline]];
-      // (OperationType::Postgame): Postgame [[inline]];
-      (OperationType::Postgame): break;
+      (OperationType::Postgame): Postgame [[inline]];
+      // (OperationType::Postgame): break;
       (_): {
       break;
       std::error(std::format("Unknown action type: {} at 0x{:X}", u32(type), $));

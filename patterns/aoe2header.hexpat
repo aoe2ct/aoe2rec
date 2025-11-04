@@ -6,7 +6,7 @@
 import type.magic;
 import std.math;
 
-float game_version;
+double game_version;
 bool parse_objects = true;
 bool parse_gaia_objects = true;
 
@@ -1234,6 +1234,9 @@ struct InitCombat : InitBaseOffensive {
     u8 unknown38;
     u16 unknown36[3];
     float unknown37[3];
+  }
+  if (game_version >= 66.60) {
+    u8 unknown39[2];
   }
 };
 

@@ -32,8 +32,14 @@ pub enum ActionData {
     Move {
         player_id: u8,
         action_length: u16,
-        #[br(count = length - 1 - 3)]
-        data: Vec<u8>,
+        unknown1: i32,
+        x: f32,
+        y: f32,
+        selected: i16,
+        unknown2: i16,
+        unknown3: [u8; 4],
+        #[br(count = if selected > -1 { selected } else { 0 })]
+        unit_ids: Vec<u32>,
     },
     #[br(magic = 4u8)]
     Create {
@@ -134,12 +140,7 @@ pub enum ActionData {
         data: Vec<u8>,
     },
     #[br(magic = 32u8)]
-    Chapter {
-        player_id: u8,
-        action_length: u16,
-        #[br(count = length - 1 - 3)]
-        data: Vec<u8>,
-    },
+    Chapter { player_id: u8, action_length: u16 },
     #[br(magic = 33u8)]
     DeAttackMove {
         player_id: u8,
@@ -183,7 +184,7 @@ pub enum ActionData {
         data: Vec<u8>,
     },
     #[br(magic = 43u8)]
-    Unknown43 {
+    SwitchAttack {
         player_id: u8,
         action_length: u16,
         #[br(count = length - 1 - 3)]
@@ -233,6 +234,13 @@ pub enum ActionData {
     },
     #[br(magic = 103u8)]
     Game(Game),
+    #[br(magic = 104u8)]
+    Unknown104 {
+        player_id: u8,
+        action_length: u16,
+        #[br(count = length - 1 - 3)]
+        data: Vec<u8>,
+    },
     #[br(magic = 105u8)]
     Wall {
         player_id: u8,

@@ -34,7 +34,7 @@ pub struct RecHeader {
     pub ai_config: AIConfig,
     pub replay: Replay,
     pub map_info: MapInfo,
-    #[br(args(replay.num_players, version_major), dbg)]
+    #[br(args(replay.num_players, version_major))]
     pub initial: Initial,
 }
 

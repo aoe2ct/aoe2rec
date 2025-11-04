@@ -43,6 +43,18 @@ pub struct Meta {
 }
 
 #[binrw]
+#[br(stream = s)]
+#[derive(Serialize, Debug)]
+pub struct ChapterData {
+    chapter_end: u32,
+    chapter_address: u32,
+    #[br(calc=s.stream_position().unwrap())]
+    current_position: u64,
+    #[br(count = (chapter_end as u64) - current_position)]
+    chapter_data: Vec<u8>,
+}
+
+#[binrw]
 #[derive(Serialize, Debug)]
 pub enum Operation {
     #[br(magic = 1u32)]
@@ -50,6 +62,9 @@ pub enum Operation {
         length: u32,
         #[br(pad_after = 4, pad_size_to = length, args(length))]
         action_data: actions::ActionData,
+        #[serde(skip_serializing)]
+        #[br(if(matches!(action_data, actions::ActionData::Chapter { player_id: _, action_length: _ })))]
+        chap: Option<ChapterData>,
     },
     #[br(magic = 2u32)]
     Sync {
