@@ -224,31 +224,47 @@ pub struct LenString16 {
 #[binrw]
 #[derive(Clone, Default)]
 pub struct DeString {
-    #[br(magic = b"\x60\x0A")]
-    #[bw(magic = b"\x60\x0A")]
+    #[brw(magic = b"\x60\x0A")]
     #[bw(calc(value.len().try_into().unwrap()))]
+    #[br(temp)]
     length: u16,
-    #[br(count = length)]
-    value: Vec<u8>,
+    #[br(count = length, try_map = String::from_utf8)]
+    #[bw(map = |s|s.as_bytes())]
+    value: String,
 }
 
 impl From<&DeString> for String {
     fn from(value: &DeString) -> Self {
-        std::string::String::from_utf8_lossy(&value.value).to_string()
+        value.value.clone()
     }
 }
 
 impl From<&String> for DeString {
     fn from(value: &String) -> Self {
         Self {
-            value: value.as_bytes().to_vec(),
+            value: value.clone(),
         }
     }
 }
 
 impl Into<String> for DeString {
     fn into(self) -> String {
-        std::string::String::from_utf8_lossy(&self.value).to_string()
+        self.value
+    }
+}
+
+impl std::fmt::Debug for DeString {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.value)
+    }
+}
+
+impl Serialize for DeString {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.value)
     }
 }
 
@@ -267,22 +283,6 @@ impl From<String> for MyNullString {
 impl Into<String> for MyNullString {
     fn into(self) -> String {
         self.text.to_string()
-    }
-}
-
-impl std::fmt::Debug for DeString {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", std::string::String::from_utf8_lossy(&self.value))
-    }
-}
-
-impl Serialize for DeString {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let strvalue = std::string::String::from_utf8_lossy(&self.value);
-        serializer.serialize_str(&strvalue)
     }
 }
 
