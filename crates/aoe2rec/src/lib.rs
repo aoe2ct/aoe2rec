@@ -32,12 +32,10 @@ pub struct Savegame {
 #[derive(Serialize, Debug)]
 pub struct Meta {
     pub checksum_interval: u32,
-    #[br(pad_after = 3)]
-    #[bw(pad_after = 3)]
+    #[brw(pad_after = 3)]
     pub multiplayer: Bool,
     pub rec_owner: u32,
-    #[br(pad_after = 3)]
-    #[bw(pad_after = 3)]
+    #[brw(pad_after = 3)]
     pub reveal_map: Bool,
     pub use_sequence_numbers: u32,
     pub number_of_chapters: u32,
@@ -176,7 +174,7 @@ pub struct SyncOperation {}
 #[derive(Copy, Clone)]
 pub struct Bool {
     #[br(map = |x: u8| x == 1)]
-    #[bw(map = |ranked: &bool| match ranked { true => 1u8, false => 0u8})]
+    #[bw(map = |x: &bool| match x { true => 1u8, false => 0u8})]
     value: bool,
 }
 
