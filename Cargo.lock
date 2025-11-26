@@ -85,6 +85,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "aoe2rec-cli"
+version = "0.1.0"
+dependencies = [
+ "aoe2rec",
+]
+
+[[package]]
 name = "aoe2rec-js"
 version = "0.1.19"
 dependencies = [
