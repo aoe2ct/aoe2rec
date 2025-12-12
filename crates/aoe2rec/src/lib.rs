@@ -396,7 +396,7 @@ impl Savegame {
             .collect()
     }
 
-    pub fn get_summary(&self) -> summary::SavegameSummary {
+    pub fn get_summary(&self) -> summary::SavegameSummary<'_> {
         summary::SavegameSummary {
             header: summary::SummaryHeader {
                 game: &self.zheader.game,

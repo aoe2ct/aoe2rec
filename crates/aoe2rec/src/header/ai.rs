@@ -41,31 +41,31 @@ pub struct AIInfo {
               // skip_magic3: Vec<()>,
 }
 
-#[binrw]
-#[derive(Serialize, Debug)]
-pub struct UnknownAI {
-    #[br(dbg)]
-    seq: u16,
-    // #[br(magic = b"\xff\xff")]
-    #[br(dbg)]
-    skip_magic: u16,
-    #[br(dbg)]
-    unknown1: u8,
-    #[br(dbg)]
-    unknown_count: u8,
-    #[br(magic = b"\x00\x00", dbg)]
-    skip_magic2: u16,
-    #[br(count = unknown_count)]
-    unknown2: Vec<u32>,
-    #[br(dbg)]
-    unknown3: u32,
-    #[br(dbg)]
-    unknown4: u32,
-    #[br(dbg)]
-    unknown5: u32,
-    #[br(dbg)]
-    crc: u32,
-}
+// #[binrw]
+// #[derive(Serialize, Debug)]
+// pub struct UnknownAI {
+//     #[br(dbg)]
+//     seq: u16,
+//     // #[br(magic = b"\xff\xff")]
+//     #[br(dbg)]
+//     skip_magic: u16,
+//     #[br(dbg)]
+//     unknown1: u8,
+//     #[br(dbg)]
+//     unknown_count: u8,
+//     #[br(magic = b"\x00\x00", dbg)]
+//     skip_magic2: u16,
+//     #[br(count = unknown_count)]
+//     unknown2: Vec<u32>,
+//     #[br(dbg)]
+//     unknown3: u32,
+//     #[br(dbg)]
+//     unknown4: u32,
+//     #[br(dbg)]
+//     unknown5: u32,
+//     #[br(dbg)]
+//     crc: u32,
+// }
 
 #[binrw]
 #[derive(Serialize, Debug)]

@@ -1,12 +1,12 @@
 [package]
 name = "aoe2rec"
-description = "Library to parse Age of Empires II: Definitive Edition recorded games"
-license = "MIT"
 version = "0.2.5"
 edition = "2021"
+description = "Library to parse Age of Empires II: Definitive Edition recorded games"
+license = "MIT"
 
 [dependencies]
-binrw = "0.14.1"
+binrw = "0.15.0"
 bytes = { version = "1.8.0", features = ["std"] }
 serde = { version = "1.0.214", features = ["derive"] }
 yazi = "0.2.0"

@@ -11,8 +11,7 @@ pub enum ActionData {
     Interact {
         player_id: u8,
         action_length: u16,
-        #[br(count = length - 1 - 3)]
-        data: Vec<u8>,
+        data: Interact,
     },
     #[br(magic = 1u8)]
     Stop {
@@ -545,18 +544,4 @@ pub enum Game {
     //     Padding(9)
     // )),
     // Padding(3)
-}
-
-#[binrw]
-#[derive(Serialize, Debug)]
-pub struct DeQueue {
-    player_id: u8,
-    building_type: u16,
-    selected: u8,
-    unknown: u8,
-    unit_type: u16,
-    queue_amount: u8,
-    unknown2: u8,
-    #[br(count=selected)]
-    building_ids: Vec<u32>,
 }
