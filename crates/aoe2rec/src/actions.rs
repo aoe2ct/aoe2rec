@@ -11,7 +11,14 @@ pub enum ActionData {
     Interact {
         player_id: u8,
         action_length: u16,
-        data: Interact,
+        target_id: u32,
+        x: f32,
+        y: f32,
+        selected: i16,
+        unknown1: i16,
+        unknown2: [i8; 4],
+        #[br(count = if selected > -1 { selected } else { 0 })]
+        unit_ids: Vec<u32>,
     },
     #[br(magic = 1u8)]
     Stop {
@@ -72,7 +79,7 @@ pub enum ActionData {
     Resign {
         player_id: u8,
         action_length: u16,
-        #[br(count = length - 1 - 3)]
+        #[br(count = action_length)]
         data: Vec<u8>,
     },
     #[br(magic = 15u8)]
@@ -424,20 +431,6 @@ pub enum ActionData {
     },
 }
 
-#[binrw]
-#[derive(Serialize, Debug)]
-pub struct Interact {
-    player_id: u8,
-    unknown: u16,
-    target_id: u32,
-    selected: u32,
-    x: f32,
-    y: f32,
-    // "next"/Peek(Bytes(8)),
-    // "flags"/If(lambda ctx: check_flags(ctx.next), Bytes(8)),
-    #[br(count=selected)]
-    unit_ids: Vec<u32>,
-}
 #[binrw]
 #[derive(Serialize, Debug)]
 pub enum Game {
