@@ -1,6 +1,6 @@
 [package]
 name = "aoe2rec-js"
-version = "0.1.14"
+version = "0.1.15"
 authors = ["Stéphane Bisinger <stephane@sbisinger.ch>"]
 description = "WASM version of aoe2rec to parse Age of Empires II: Definitive Edition recorded games in the browser"
 license = "MIT"
@@ -20,7 +20,7 @@ wasm-bindgen = "0.2.84"
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
 # code size when deploying.
 console_error_panic_hook = { version = "0.1.7", optional = true }
-aoe2rec = { version = "0.3.0", path = "../aoe2rec" }
+aoe2rec = { version = "0.4.0", path = "../aoe2rec" }
 bytes = { version = "1.9.0", features = ["std"] }
 serde-wasm-bindgen = "0.6.5"
 js-sys = "0.3.76"
