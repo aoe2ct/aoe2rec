@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.2.5...aoe2rec-v0.3.0) - 2025-12-12
+
+### Other
+
+- Fix linting errors and update depedencies
+- Implement action for DeQueue
+- Implement Move and Chapter actions, add Action 104
+- Rename name2 to censored_name
+
 ## [0.2.5](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.2.4...aoe2rec-v0.2.5) - 2025-08-15
 
 ### Fixed
