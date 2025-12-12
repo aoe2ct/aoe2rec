@@ -30,6 +30,6 @@ jobs:
           registry-url: "https://registry.npmjs.org"
 
       - name: Install
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+        run: curl https://drager.github.io/wasm-pack/installer/init.sh -sSf | sh
       - run: wasm-pack build crates/aoe2rec-js --release
       - run: wasm-pack publish  crates/aoe2rec-js
