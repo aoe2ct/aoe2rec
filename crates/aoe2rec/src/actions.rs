@@ -5,7 +5,7 @@ use crate::Bool;
 
 #[binrw]
 #[derive(Serialize, Debug)]
-#[br(import(length: u32))]
+#[br(import(length: u32, major: u16))]
 pub enum ActionData {
     #[br(magic = 0u8)]
     Interact {
@@ -371,8 +371,15 @@ pub enum ActionData {
     DeQueue {
         player_id: u8,
         action_length: u16,
-        #[br(count = length - 1 - 3)]
-        data: Vec<u8>,
+        selected: u16,
+        unknown1: [u8; 4],
+        building_type: u16,
+        unit_id: u16,
+        amount: u16,
+        #[br(if(major >= 66))]
+        unknown2: u32,
+        #[br(count = selected)]
+        building_ids: Vec<u32>,
     },
     #[br(magic = 130u8)]
     DeUnknown130 {

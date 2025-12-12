@@ -22,7 +22,7 @@ pub struct Savegame {
     pub zheader: RecHeader,
     pub log_version: u32,
     pub meta: Meta,
-    #[br(parse_with = until_eof)]
+    #[br(parse_with = until_eof, args(zheader.version_major) )]
     pub operations: Vec<Operation>,
 }
 
@@ -56,11 +56,12 @@ pub struct ChapterData {
 
 #[binrw]
 #[derive(Serialize, Debug)]
+#[br(import(major: u16))]
 pub enum Operation {
     #[br(magic = 1u32)]
     Action {
         length: u32,
-        #[br(pad_after = 4, pad_size_to = length, args(length))]
+        #[br(pad_after = 4, pad_size_to = length, args(length, major))]
         action_data: actions::ActionData,
         #[serde(skip_serializing)]
         #[br(if(matches!(action_data, actions::ActionData::Chapter { player_id: _, action_length: _ })))]
