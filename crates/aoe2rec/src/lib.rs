@@ -63,7 +63,7 @@ pub enum Operation {
         length: u32,
         #[br(pad_size_to = length, args(length, major))]
         action_data: actions::ActionData,
-        unknown_end: u32,
+        world_time: u32,
         #[serde(skip_serializing)]
         #[br(if(matches!(action_data, actions::ActionData::Chapter { player_id: _, action_length: _ })))]
         chap: Option<ChapterData>,
@@ -77,16 +77,9 @@ pub enum Operation {
         checksum: Option<SyncChecksum>,
     },
     #[br(magic = 3u32)]
-    Viewlock {
-        x: f32,
-        y: f32,
-        player_id: u32,
-    },
+    Viewlock { x: f32, y: f32, player_id: u32 },
     #[br(magic = 4u32)]
-    Chat {
-        padding: [u8; 4],
-        text: LenString,
-    },
+    Chat { padding: [u8; 4], text: LenString },
     #[br(magic = 5u32)]
     AddAttribute {
         player_id: u8,
@@ -105,35 +98,6 @@ pub enum Operation {
         version_repeat: u32,
         #[br(magic = b"\xce\xa4\x59\xb1\x05\xdb\x7b\x43")]
         end_bit: (),
-    },
-    Embedded {
-        embedded: EmbeddedOperation,
-    },
-}
-
-#[binrw]
-#[derive(Serialize, Debug)]
-pub enum EmbeddedOperation {
-    #[br(magic = 0u16)]
-    Header {
-        data: u8,
-        // NOTE: This should break. Have not found savegame with such Embed
-    },
-    #[br(magic = 9024u16)]
-    Chat {
-        data: u8,
-        // NOTE: This should break. Have not found savegame with such Embed
-    },
-    #[br(magic = 65535u16)]
-    Other {
-        data: u8,
-        // NOTE: This should break. Have not found savegame with such Embed
-    },
-    Unknown {
-        length: u16,
-        #[serde(skip_serializing)]
-        #[br(count = length)]
-        data: Vec<u8>,
     },
 }
 

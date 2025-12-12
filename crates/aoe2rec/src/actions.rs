@@ -321,8 +321,18 @@ pub enum ActionData {
     Order {
         player_id: u8,
         action_length: u16,
-        #[br(count = length - 1 - 3)]
-        data: Vec<u8>,
+        selected: i16,
+        unknown1: i16,
+        building_id: i32,
+        unknown2: f32,
+        unknown3: f32,
+        unknown4: i32,
+        unknown5: u32,
+        order_type: OrderType,
+        multiple: u16,
+        unknown7: u16,
+        #[br(count = if selected > -1 { selected } else { 0 })]
+        object_ids: Vec<u32>,
     },
     #[br(magic = 119u8)]
     Queue {
@@ -429,6 +439,18 @@ pub enum ActionData {
         #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
+}
+
+#[binrw]
+#[derive(Serialize, Debug)]
+#[brw(repr(u8))]
+pub enum OrderType {
+    Pack = 1,
+    Unpack = 2,
+    Unqueue = 4,
+    UnknownOrder5 = 5,
+    Garrison = 6,
+    UnknownOrder8 = 8,
 }
 
 #[binrw]

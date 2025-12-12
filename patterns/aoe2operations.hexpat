@@ -423,7 +423,7 @@ namespace aoe2op {
         u8 action_data[length + 4 -1];
       }
     }
-    u32 unknown_end;
+    u32 world_time;
     if (action_type == ActionType::Chapter) {
       u32 chapter_end;
       u32 chapter_address;
