@@ -10,16 +10,16 @@ use binrw::{binrw, BinReaderExt};
 use map::MapInfo;
 use serde::Serialize;
 
-pub fn decompress(header_data: Vec<u8>) -> RecHeader {
+pub fn decompress(header_data: Vec<u8>) -> ChapterHeader {
     let (header, _) = yazi::decompress(&header_data, yazi::Format::Raw).unwrap();
     let mut hreader = BufReader::new(Cursor::new(header));
-    let parsed_header: RecHeader = hreader.read_le().unwrap();
+    let parsed_header: ChapterHeader = hreader.read_le().unwrap();
     return parsed_header;
 }
 
 #[binrw]
 #[derive(Serialize)]
-pub struct RecHeader {
+pub struct ChapterHeader {
     pub game: MyNullString,
     pub save: f32,
     #[br(map = |x: u16| (x as f32 / 6553.6).round() as u16)]

@@ -41,7 +41,13 @@ impl<'a> GameTeam<'_> {
     pub fn from_savegame(savegame: &'a Savegame) -> Vec<GameTeam<'a>> {
         let resignations = savegame.get_resignations();
         let mut teams_ids = BTreeSet::new();
-        for (index, player) in savegame.zheader.game_settings.players.iter().enumerate() {
+        for (index, player) in savegame.chapters[0]
+            .header
+            .game_settings
+            .players
+            .iter()
+            .enumerate()
+        {
             let team_id = match player.resolved_team_id {
                 1 => (9 + index).try_into().unwrap_or(9),
                 _ => player.resolved_team_id,
@@ -52,8 +58,8 @@ impl<'a> GameTeam<'_> {
         teams_ids
             .iter()
             .map(|team_id| GameTeam {
-                players: savegame
-                    .zheader
+                players: savegame.chapters[0]
+                    .header
                     .game_settings
                     .players
                     .iter()

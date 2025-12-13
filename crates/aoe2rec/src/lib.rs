@@ -2,35 +2,129 @@ pub mod actions;
 pub mod header;
 pub mod minimal;
 pub mod summary;
-mod tests;
 mod destring;
+mod tests;
 
-use destring::DeString;
 use binrw::helpers::until_eof;
-use binrw::io::{BufReader, Cursor, SeekFrom};
-use binrw::{binrw, BinReaderExt, BinResult, BinWriterExt, NullString};
-use header::{decompress, RecHeader};
+use binrw::io::{BufReader, Cursor};
+use binrw::{binread, binrw, BinRead, BinReaderExt, BinResult, BinWriterExt, NullString};
+use destring::DeString;
+use header::{decompress, ChapterHeader};
 use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
 use summary::GameTeam;
 
-#[binrw]
+//#[binrw] // TODO: make writable again
+#[binread]
 #[derive(Serialize)]
 pub struct Savegame {
-    pub length: u32,
-    pub other: u32,
-    #[br(count = length - 8, map = decompress)]
-    pub zheader: RecHeader,
-    pub log_version: u32,
-    pub meta: Meta,
-    #[br(parse_with = until_eof, args(zheader.version_major))]
-    pub operations: Vec<Operation>,
+    #[br(parse_with = until_eof)]
+    chapters: Vec<Chapter>,
+}
+
+// TODO: Can we simplify this?
+fn until_chapter_end<'a, Ret, T, Arg, Reader>(
+    next_header_addr: u32,
+) -> impl Fn(&mut Reader, binrw::Endian, Arg) -> BinResult<Ret>
+where
+    Ret: FromIterator<T>,
+    Arg: Clone,
+    T: BinRead<Args<'a> = Arg>,
+    Reader: binrw::io::Read + binrw::io::Seek,
+{
+    move |reader, endian, args| {
+        std::iter::from_fn(|| {
+            if next_header_addr == 0 {
+                match T::read_options(reader, endian, args.clone()) {
+                    ok @ Ok(_) => Some(ok),
+                    Err(err) if err.is_eof() => None,
+                    err => Some(err),
+                }
+            } else {
+                let chapter_end = reader
+                    .stream_position()
+                    .map_or(true, |pos| pos >= next_header_addr.into());
+                if chapter_end {
+                    None
+                } else {
+                    match T::read_options(reader, endian, args.clone()) {
+                        Ok(ok) => Some(Ok(ok)),
+                        Err(err) => Some(Err(err)),
+                    }
+                }
+            }
+        })
+        .fuse()
+        .collect()
+    }
+}
+
+#[binread]
+#[brw(little, stream = stream)] // TODO: re-introduce write-capability
+#[derive(Serialize)]
+pub struct Chapter {
+    #[br(temp)]
+    // #[bw(try_calc = )] // TODO: calculate address
+    header_end_address: u32,
+    #[br(temp)]
+    // #[bw(try_calc = )] // TODO: calculate address
+    next_header_addr: u32,
+
+    #[br(try_calc = (Into::<u64>::into(header_end_address) - stream.stream_position()?).try_into())]
+    header_length: u32,
+
+    #[br(count = header_length, map = decompress)]
+    //#[bw(map = compress)] // TODO: compression
+    header: ChapterHeader,
+    log_version: u32,
+    meta: ChapterMeta,
+
+    #[br(parse_with = until_chapter_end(next_header_addr))]
+    operations: Vec<Operation>,
+}
+
+pub struct OperationIter<'a> {
+    chapter: std::slice::Iter<'a, Chapter>,
+    operation: Option<std::slice::Iter<'a, Operation>>,
+}
+
+impl<'a> OperationIter<'a> {
+    pub fn new(savegame: &'a Savegame) -> Self {
+        let chapters = savegame.chapters.iter();
+        OperationIter {
+            chapter: chapters,
+            operation: None,
+        }
+    }
+}
+
+impl<'a> std::iter::Iterator for OperationIter<'a> {
+    type Item = &'a Operation;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match &mut self.operation {
+            Some(current_chapter) => match current_chapter.next() {
+                None => {
+                    self.operation = None;
+                    self.next()
+                }
+                Some(operation) => Some(operation),
+            },
+            None => match self.chapter.next() {
+                Some(next_chapter) => {
+                    self.operation = Some(next_chapter.operations.iter());
+                    self.next()
+                }
+                None => None,
+            },
+        }
+    }
 }
 
 #[binrw]
 #[derive(Serialize, Debug)]
-pub struct Meta {
+pub struct ChapterMeta {
     pub checksum_interval: u32,
     #[brw(pad_after = 3)]
     pub multiplayer: Bool,
@@ -43,30 +137,18 @@ pub struct Meta {
 }
 
 #[binrw]
-#[br(stream = s)]
-#[derive(Serialize, Debug)]
-pub struct ChapterData {
-    chapter_end: u32,
-    chapter_address: u32,
-    #[br(calc=s.stream_position().unwrap())]
-    current_position: u64,
-    #[br(count = (chapter_end as u64) - current_position)]
-    chapter_data: Vec<u8>,
-}
-
-#[binrw]
 #[derive(Serialize, Debug)]
 #[br(import(major: u16))]
 pub enum Operation {
+    #[br(magic = b"\xCE\xA4\x59\xB1\x05\xDB\x7B\x43")]
+    EndOfReplay,
+
     #[br(magic = 1u32)]
     Action {
         length: u32,
-        #[br(pad_size_to = length, args(length, major))]
+        #[br(pad_size_to = length, args(major))]
         action_data: actions::ActionData,
         world_time: u32,
-        #[serde(skip_serializing)]
-        #[br(if(matches!(action_data, actions::ActionData::Chapter { player_id: _, action_length: _ })))]
-        chap: Option<ChapterData>,
     },
     #[br(magic = 2u32)]
     Sync {
@@ -89,46 +171,27 @@ pub enum Operation {
     },
     #[br(magic = 6u32)]
     PostGame {
-        #[br(seek_before = SeekFrom::End(-12))]
-        version: u32,
-        #[br(seek_before = SeekFrom::Current(-8))]
-        num_blocks: u32,
-        #[br(count = num_blocks, seek_before = SeekFrom::Current(-8), restore_position)]
-        blocks: Vec<PostGameBlock>,
-        version_repeat: u32,
-        #[br(magic = b"\xce\xa4\x59\xb1\x05\xdb\x7b\x43")]
-        end_bit: (),
-    },
-}
-
-#[binrw]
-#[derive(Serialize, Debug)]
-pub enum PostGameBlock {
-    #[br(magic = 1u32)]
-    WorldTime {
-        #[br(seek_before=SeekFrom::Current(-8))]
-        length: u32,
-        #[br(seek_before=SeekFrom::Current(-(length as i64) - 4))]
-        world_time: u32,
-    },
-    #[br(magic = 2u32)]
-    Leaderboards {
-        #[br(seek_before = SeekFrom::Current(-8))]
-        length: u32,
-        #[br(seek_before = SeekFrom::Current(-(length as i64) - 4))]
+        game_length: u32,
+        unk1: u32,
+        unk2: u32,
         num_leaderboards: u32,
+
         #[br(count = num_leaderboards)]
-        leaderboards: Vec<Leaderboard>,
-        #[br(seek_before = SeekFrom::Current(-(length as i64) - 4))]
-        realignment_field: (),
+        leaderboards: Vec<PostGameLeaderboard>,
+
+        unk3: u32,
+        unk4: u32,
+        unk5: u32,
+        unk6: u32,
     },
 }
 
 #[binrw]
 #[derive(Serialize, Debug)]
-pub struct Leaderboard {
+pub struct PostGameLeaderboard {
     pub id: u32,
-    pub unknown1: u16,
+    pub unk1: u8,
+    pub unk2: u8,
     pub num_players: u32,
     #[br(count = num_players)]
     pub players: Vec<LeaderboardPlayer>,
@@ -288,20 +351,24 @@ impl Savegame {
         return Ok(savegame);
     }
 
+    pub fn operations(&self) -> OperationIter<'_> {
+        OperationIter::new(self)
+    }
+
     pub fn get_duration(&self) -> u32 {
-        self.operations
-            .iter()
-            .fold(self.zheader.replay.world_time, |duration, operation| {
+        self.operations().fold(
+            self.chapters[0].header.replay.world_time,
+            |duration, operation| {
                 return match operation {
                     Operation::Sync { time_increment, .. } => duration + time_increment,
                     _ => duration,
                 };
-            })
+            },
+        )
     }
 
     pub fn get_resignations(&self) -> Vec<u8> {
-        self.operations
-            .iter()
+        self.operations()
             .map(|operation| match operation {
                 Operation::Action { action_data, .. } => match action_data {
                     actions::ActionData::Resign { player_id, .. } => *player_id,
@@ -316,13 +383,13 @@ impl Savegame {
     pub fn get_summary(&self) -> summary::SavegameSummary<'_> {
         summary::SavegameSummary {
             header: summary::SummaryHeader {
-                game: &self.zheader.game,
-                version_minor: self.zheader.version_minor,
-                version_major: self.zheader.version_major,
-                build: self.zheader.build,
-                timestamp: self.zheader.timestamp,
-                game_settings: &self.zheader.game_settings,
-                replay: &self.zheader.replay,
+                game: &self.chapters[0].header.game,
+                version_minor: self.chapters[0].header.version_minor,
+                version_major: self.chapters[0].header.version_major,
+                build: self.chapters[0].header.build,
+                timestamp: self.chapters[0].header.timestamp,
+                game_settings: &self.chapters[0].header.game_settings,
+                replay: &self.chapters[0].header.replay,
             },
             duration: self.get_duration(),
             resignations: self.get_resignations(),
