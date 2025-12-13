@@ -1,14 +1,14 @@
 //------------------------------------------------
 //--- 010 Editor v16.0 Binary Template
 //
-//      File: 
-//   Authors: 
-//   Version: 
-//   Purpose: 
-//  Category: 
-// File Mask: 
-//  ID Bytes: 
-//   History: 
+//      File:
+//   Authors:
+//   Version:
+//   Purpose:
+//  Category:
+// File Mask:
+//  ID Bytes:
+//   History:
 //------------------------------------------------
 
 
@@ -38,17 +38,17 @@ struct GameSpeed {
 
 struct ActionGame {
     uint8 magic;
-    
+
     switch(magic) {
         case 0:
             GameDiplomacy diplomacy;
-            break;    
+            break;
         case 1:
             GameSpeed speed;
             break;
-        
+
       default:
-        break;  
+        break;
     };
 };
 
@@ -56,7 +56,7 @@ struct ActionGame {
 // Actions
 
 struct ActionInteract {
-    
+
 };
 
 struct Action {
@@ -65,7 +65,7 @@ struct Action {
         case 0x67:
             ActionGame game;
       default:
-        break;  
+        break;
     };
 };
 
@@ -76,11 +76,11 @@ struct Operation0 {
     uint32 sync;
     uint8 unknown2[4];
     uint32 sequence;
-    
+
     if (sequence > 0) {
       uint8 unknown3[332];
     }
-    
+
     uint8 unknown4[8];
 };
 
@@ -114,8 +114,8 @@ struct OperationAddAttribute {
 
 struct PostGamePlayer {
     uint32 player_number;
-    uint32 rank;
-    uint32 elo;   
+    int32 rank;
+    uint32 elo;
 };
 
 struct PostGameLeaderboard {
@@ -131,12 +131,12 @@ struct OperationPostGame {
     uint32 unk1;
     uint32 unk2;
     uint32 num_leaderboards;
-    PostGameLeaderboard leaderboards[num_leaderboards] <optimize=false>;        
+    PostGameLeaderboard leaderboards[num_leaderboards] <optimize=false>;
     uint32 unk3;
     uint32 unk4;
     uint32 unk5;
     uint32 unk6;
-    
+
     uint8 tail[8];
 };
 
@@ -167,7 +167,7 @@ struct Operation {
            break;
         default:
            break;
-    } 
+    }
 };
 
 // Aoe2Record
@@ -188,7 +188,7 @@ struct Aoe2Chapter {
     uint32 compressed_data_end <format=hex>;
     uint32 next_chapter_address <format=hex>;
     uint8 compressed_data[compressed_data_end - FTell()];
-    
+
     uint32 log_version;
     Aoe2RecordMeta meta;
     //while(!FEof()) {
@@ -199,7 +199,7 @@ struct Aoe2Chapter {
     } else {
         while(!FEof()) {
             Operation operations;
-        }           
+        }
     }
 };
 
