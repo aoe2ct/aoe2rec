@@ -19,10 +19,24 @@ impl From<&DeString> for String {
     }
 }
 
+impl From<DeString> for String {
+    fn from(value: DeString) -> Self {
+        value.value
+    }
+}
+
 impl From<&String> for DeString {
     fn from(value: &String) -> Self {
         Self {
             value: value.clone(),
+        }
+    }
+}
+
+impl From<String> for DeString {
+    fn from(value: String) -> Self {
+        Self {
+            value: value,
         }
     }
 }

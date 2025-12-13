@@ -28,3 +28,9 @@ impl From<bool> for Bool {
         Bool { value }
     }
 }
+
+impl From<Bool> for bool {
+    fn from(value: Bool) -> Self {
+        value.value
+    }
+}
