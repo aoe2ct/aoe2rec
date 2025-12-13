@@ -84,44 +84,6 @@ pub struct Chapter {
     operations: Vec<Operation>,
 }
 
-pub struct OperationIter<'a> {
-    chapter: std::slice::Iter<'a, Chapter>,
-    operation: Option<std::slice::Iter<'a, Operation>>,
-}
-
-impl<'a> OperationIter<'a> {
-    pub fn new(savegame: &'a Savegame) -> Self {
-        let chapters = savegame.chapters.iter();
-        OperationIter {
-            chapter: chapters,
-            operation: None,
-        }
-    }
-}
-
-impl<'a> std::iter::Iterator for OperationIter<'a> {
-    type Item = &'a Operation;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match &mut self.operation {
-            Some(current_chapter) => match current_chapter.next() {
-                None => {
-                    self.operation = None;
-                    self.next()
-                }
-                Some(operation) => Some(operation),
-            },
-            None => match self.chapter.next() {
-                Some(next_chapter) => {
-                    self.operation = Some(next_chapter.operations.iter());
-                    self.next()
-                }
-                None => None,
-            },
-        }
-    }
-}
-
 #[binrw]
 #[derive(Serialize, Debug)]
 pub struct ChapterMeta {
@@ -351,8 +313,8 @@ impl Savegame {
         return Ok(savegame);
     }
 
-    pub fn operations(&self) -> OperationIter<'_> {
-        OperationIter::new(self)
+    pub fn operations(&self) -> impl Iterator<Item = &Operation> {
+        self.chapters.iter().flat_map(|chapter|chapter.operations.iter())
     }
 
     pub fn get_duration(&self) -> u32 {
