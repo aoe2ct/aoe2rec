@@ -1,15 +1,16 @@
 mod actions;
 mod header;
-mod minimal;
+pub mod minimal;
 mod primitives;
 pub mod summary;
 mod tests;
 
+use binrw::io::TakeSeekExt;
 use binrw::helpers::until_eof;
 use binrw::io::{BufReader, Cursor};
-use binrw::{binread, binrw, BinRead, BinReaderExt, BinResult, BinWriterExt};
-use primitives::{DeString, LenString32, Bool};
+use binrw::{binread, binrw, BinReaderExt, BinResult, BinWriterExt};
 use header::{decompress, ChapterHeader};
+use primitives::{Bool, DeString, LenString32};
 use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
@@ -23,40 +24,12 @@ pub struct Savegame {
     chapters: Vec<Chapter>,
 }
 
-// TODO: Can we simplify this?
-fn until_chapter_end<'a, Ret, T, Arg, Reader>(
-    next_header_addr: u32,
-) -> impl Fn(&mut Reader, binrw::Endian, Arg) -> BinResult<Ret>
-where
-    Ret: FromIterator<T>,
-    Arg: Clone,
-    T: BinRead<Args<'a> = Arg>,
-    Reader: binrw::io::Read + binrw::io::Seek,
-{
-    move |reader, endian, args| {
-        std::iter::from_fn(|| {
-            if next_header_addr == 0 {
-                match T::read_options(reader, endian, args.clone()) {
-                    ok @ Ok(_) => Some(ok),
-                    Err(err) if err.is_eof() => None,
-                    err => Some(err),
-                }
-            } else {
-                let chapter_end = reader
-                    .stream_position()
-                    .map_or(true, |pos| pos >= next_header_addr.into());
-                if chapter_end {
-                    None
-                } else {
-                    match T::read_options(reader, endian, args.clone()) {
-                        Ok(ok) => Some(Ok(ok)),
-                        Err(err) => Some(Err(err)),
-                    }
-                }
-            }
-        })
-        .fuse()
-        .collect()
+fn chapter_size(current_offset: u32, next_offset: u32) -> u32 {
+    if next_offset > 0 {
+        next_offset.saturating_sub(current_offset)
+    } else {
+        // Don't limit bytes for the final chapter.
+        u32::MAX.into()
     }
 }
 
@@ -69,7 +42,7 @@ pub struct Chapter {
     header_end_address: u32,
     #[br(temp)]
     // #[bw(try_calc = )] // TODO: calculate address
-    next_header_addr: u32,
+    next_chapter_address: u32,
 
     #[br(try_calc = (Into::<u64>::into(header_end_address) - stream.stream_position()?).try_into())]
     header_length: u32,
@@ -80,7 +53,11 @@ pub struct Chapter {
     log_version: u32,
     meta: ChapterMeta,
 
-    #[br(parse_with = until_chapter_end(next_header_addr))]
+    #[br(temp, try_calc = stream.stream_position()?.try_into())]
+    operations_start_address: u32,
+
+    #[br(map_stream = |stream| stream.take_seek(chapter_size(operations_start_address, next_chapter_address).into()))]
+    #[br(parse_with = until_eof)]
     operations: Vec<Operation>,
 }
 
@@ -113,9 +90,7 @@ pub enum Operation {
         world_time: u32,
     },
     #[brw(magic = 2u32)]
-    Sync {
-        time_increment: u32,
-    },
+    Sync { time_increment: u32 },
     #[brw(magic = 3u32)]
     Viewlock { x: f32, y: f32, player_id: u32 },
     #[brw(magic = 4u32)]
@@ -213,18 +188,17 @@ impl Savegame {
     }
 
     pub fn operations(&self) -> impl Iterator<Item = &Operation> {
-        self.chapters.iter().flat_map(|chapter|chapter.operations.iter())
+        self.chapters
+            .iter()
+            .flat_map(|chapter| chapter.operations.iter())
     }
 
     pub fn get_duration(&self) -> u32 {
         self.operations().fold(
             self.chapters[0].header.replay.world_time,
-            |duration, operation| {
-                
-                match operation {
-                    Operation::Sync { time_increment, .. } => duration + time_increment,
-                    _ => duration,
-                }
+            |duration, operation| match operation {
+                Operation::Sync { time_increment, .. } => duration + time_increment,
+                _ => duration,
             },
         )
     }
@@ -232,7 +206,10 @@ impl Savegame {
     pub fn get_resignations(&self) -> Vec<u8> {
         self.operations()
             .map(|operation| match operation {
-                Operation::Action { action_data: actions::ActionData::Resign { player_id, .. }, .. } => *player_id,
+                Operation::Action {
+                    action_data: actions::ActionData::Resign { player_id, .. },
+                    ..
+                } => *player_id,
                 _ => 100,
             })
             .filter(|player_id| *player_id < 100)

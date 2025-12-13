@@ -4,7 +4,8 @@ use serde::Serialize;
 
 use crate::{
     header::{GameSettings, Player, Replay},
-    primitives::MyNullString, Savegame,
+    primitives::MyNullString,
+    Savegame,
 };
 
 #[derive(Serialize, Debug)]

@@ -3,8 +3,8 @@ use std::{error::Error, fs::File, io::Cursor};
 use binrw::{binrw, helpers::until_eof, io::BufReader, BinReaderExt, BinWrite};
 
 use crate::{
-    primitives::{MyNullString, DeString},
     header::{EmptySlot, Player},
+    primitives::{DeString, MyNullString},
     read_strings_of_length, write_len_and_string,
 };
 
@@ -12,7 +12,7 @@ pub fn decompress(header_data: Vec<u8>) -> MinimalHeader {
     let (header, _) = yazi::decompress(&header_data, yazi::Format::Raw).unwrap();
     let mut hreader = BufReader::new(Cursor::new(header));
     let parsed_header: MinimalHeader = hreader.read_le().unwrap();
-    
+
     parsed_header
 }
 

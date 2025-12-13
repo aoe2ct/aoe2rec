@@ -5,12 +5,20 @@ use binrw::NullString;
 #[binrw]
 #[derive(Debug, Clone)]
 pub struct MyNullString {
-    pub text: NullString,
+    #[br(try_map = |val: NullString| std::string::String::from_utf8(val.0))]
+    #[bw(map = |val| NullString::from(val.clone()))]
+    pub value: String,
 }
 
 impl From<String> for MyNullString {
     fn from(value: String) -> Self {
-        MyNullString { text: value.into() }
+        MyNullString { value: value.into() }
+    }
+}
+
+impl From<MyNullString> for String {
+    fn from(value: MyNullString) -> Self {
+        value.value
     }
 }
 
@@ -19,7 +27,6 @@ impl serde::Serialize for MyNullString {
     where
         S: serde::Serializer,
     {
-        let strvalue = std::string::String::from_utf8_lossy(&self.text);
-        serializer.serialize_str(&strvalue)
+        serializer.serialize_str(&self.value)
     }
 }

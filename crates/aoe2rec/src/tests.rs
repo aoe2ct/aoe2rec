@@ -12,7 +12,7 @@ mod tests {
     #[test]
     fn it_reads_minimal_save() {
         let result = MinimalSave::from_file(Path::new("./beargwyn_vs_kamlesh.aoe2record")).unwrap();
-        assert_eq!(result.zheader.game.text.to_string(), "VER 9.4")
+        assert_eq!(result.zheader.game.value.to_string(), "VER 9.4")
         // assert_eq!(result.zheader.game_settings.n_players, 2);
         // assert_eq!(
         //     String::from(&result.zheader.game_settings.players[0].name),
@@ -34,7 +34,7 @@ mod tests {
         output.read_to_end(&mut rewritten).unwrap();
         output.seek(std::io::SeekFrom::Start(0)).unwrap();
         let reparsed: MinimalSave = BufReader::new(output).read_le().unwrap();
-        assert_eq!(reparsed.zheader.game.text.to_string(), "VER 9.4")
+        assert_eq!(reparsed.zheader.game.value.to_string(), "VER 9.4")
         // assert_eq!(
         //     String::from(&reparsed.zheader.game_settings.players[0].name),
         //     "Beargwyn"
