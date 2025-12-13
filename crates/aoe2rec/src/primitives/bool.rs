@@ -28,9 +28,3 @@ impl From<bool> for Bool {
         Bool { value }
     }
 }
-
-impl Into<bool> for Bool {
-    fn into(self) -> bool {
-        self.value
-    }
-}

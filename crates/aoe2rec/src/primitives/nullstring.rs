@@ -14,12 +14,6 @@ impl From<String> for MyNullString {
     }
 }
 
-impl Into<String> for MyNullString {
-    fn into(self) -> String {
-        self.text.to_string()
-    }
-}
-
 impl serde::Serialize for MyNullString {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

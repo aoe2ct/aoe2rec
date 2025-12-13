@@ -8,7 +8,7 @@ mod tests;
 use binrw::helpers::until_eof;
 use binrw::io::{BufReader, Cursor};
 use binrw::{binread, binrw, BinRead, BinReaderExt, BinResult, BinWriterExt};
-use primitives::{DeString, LenString16, LenString32, Bool};
+use primitives::{DeString, LenString32, Bool};
 use header::{decompress, ChapterHeader};
 use serde::Serialize;
 use std::error::Error;
@@ -203,13 +203,13 @@ impl Savegame {
     pub fn from_bytes(data: bytes::Bytes) -> Result<Savegame, Box<dyn Error>> {
         let mut breader = BufReader::new(Cursor::new(data));
         let savegame: Savegame = breader.read_le()?;
-        return Ok(savegame);
+        Ok(savegame)
     }
     pub fn from_file(path: &std::path::Path) -> Result<Savegame, Box<dyn Error>> {
         let file = File::open(path)?;
         let mut reader = BufReader::new(file);
         let savegame: Savegame = reader.read_le()?;
-        return Ok(savegame);
+        Ok(savegame)
     }
 
     pub fn operations(&self) -> impl Iterator<Item = &Operation> {
@@ -220,10 +220,11 @@ impl Savegame {
         self.operations().fold(
             self.chapters[0].header.replay.world_time,
             |duration, operation| {
-                return match operation {
+                
+                match operation {
                     Operation::Sync { time_increment, .. } => duration + time_increment,
                     _ => duration,
-                };
+                }
             },
         )
     }
@@ -231,10 +232,7 @@ impl Savegame {
     pub fn get_resignations(&self) -> Vec<u8> {
         self.operations()
             .map(|operation| match operation {
-                Operation::Action { action_data, .. } => match action_data {
-                    actions::ActionData::Resign { player_id, .. } => *player_id,
-                    _ => 100,
-                },
+                Operation::Action { action_data: actions::ActionData::Resign { player_id, .. }, .. } => *player_id,
                 _ => 100,
             })
             .filter(|player_id| *player_id < 100)

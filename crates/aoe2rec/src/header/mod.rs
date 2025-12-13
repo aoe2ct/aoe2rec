@@ -15,7 +15,7 @@ pub fn decompress(header_data: Vec<u8>) -> ChapterHeader {
     let reader = flate2::read::DeflateDecoder::new(&header_data[..]);
     let parsed_header: ChapterHeader = BufReader::new(NoSeek::new(reader)).read_le().unwrap();
 
-    return parsed_header;
+    parsed_header
 }
 
 #[binrw]
