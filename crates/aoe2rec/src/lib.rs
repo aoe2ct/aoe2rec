@@ -1,14 +1,14 @@
-pub mod actions;
-pub mod header;
-pub mod minimal;
+mod actions;
+mod header;
+mod minimal;
+mod primitives;
 pub mod summary;
-mod destring;
 mod tests;
 
 use binrw::helpers::until_eof;
 use binrw::io::{BufReader, Cursor};
-use binrw::{binread, binrw, BinRead, BinReaderExt, BinResult, BinWriterExt, NullString};
-use destring::DeString;
+use binrw::{binread, binrw, BinRead, BinReaderExt, BinResult, BinWriterExt};
+use primitives::{DeString, LenString16, LenString32, Bool};
 use header::{decompress, ChapterHeader};
 use serde::Serialize;
 use std::error::Error;
@@ -100,44 +100,42 @@ pub struct ChapterMeta {
 
 #[binrw]
 #[derive(Serialize, Debug)]
-#[br(import(major: u16))]
+#[brw(import(major: u16))]
 pub enum Operation {
-    #[br(magic = b"\xCE\xA4\x59\xB1\x05\xDB\x7B\x43")]
+    #[brw(magic = b"\xCE\xA4\x59\xB1\x05\xDB\x7B\x43")]
     EndOfReplay,
 
-    #[br(magic = 1u32)]
+    #[brw(magic = 1u32)]
     Action {
         length: u32,
         #[br(pad_size_to = length, args(major))]
         action_data: actions::ActionData,
         world_time: u32,
     },
-    #[br(magic = 2u32)]
+    #[brw(magic = 2u32)]
     Sync {
         time_increment: u32,
-        #[br(restore_position)]
-        next: u32,
-        #[br(if (next == 0))]
-        checksum: Option<SyncChecksum>,
     },
-    #[br(magic = 3u32)]
+    #[brw(magic = 3u32)]
     Viewlock { x: f32, y: f32, player_id: u32 },
-    #[br(magic = 4u32)]
-    Chat { padding: [u8; 4], text: LenString },
-    #[br(magic = 5u32)]
+    #[brw(magic = 4u32)]
+    Chat { padding: [u8; 4], text: LenString32 },
+    #[brw(magic = 5u32)]
     AddAttribute {
         player_id: u8,
         #[br(pad_after = 1)]
         attribute: u8,
         amount: f32,
     },
-    #[br(magic = 6u32)]
+    #[brw(magic = 6u32)]
     PostGame {
         game_length: u32,
         unk1: u32,
         unk2: u32,
-        num_leaderboards: u32,
 
+        #[br(temp)]
+        #[bw(try_calc = leaderboards.len().try_into())]
+        num_leaderboards: u32,
         #[br(count = num_leaderboards)]
         leaderboards: Vec<PostGameLeaderboard>,
 
@@ -154,6 +152,9 @@ pub struct PostGameLeaderboard {
     pub id: u32,
     pub unk1: u8,
     pub unk2: u8,
+
+    #[br(temp)]
+    #[bw(try_calc = players.len().try_into())]
     pub num_players: u32,
     #[br(count = num_players)]
     pub players: Vec<LeaderboardPlayer>,
@@ -182,8 +183,7 @@ pub struct SyncChecksum {
 
 #[binrw]
 #[derive(Serialize)]
-#[br(repr = u32)]
-#[bw(repr = u32)]
+#[brw(repr = u32)]
 pub enum OperationType {
     Action = 1,
     Sync,
@@ -194,111 +194,6 @@ pub enum OperationType {
 #[binrw]
 #[derive(Serialize)]
 pub struct SyncOperation {}
-
-#[binrw]
-#[derive(Copy, Clone)]
-pub struct Bool {
-    #[br(map = |x: u8| x == 1)]
-    #[bw(map = |x: &bool| match x { true => 1u8, false => 0u8})]
-    value: bool,
-}
-
-impl std::fmt::Debug for Bool {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.value)
-    }
-}
-
-impl Serialize for Bool {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_bool(self.value)
-    }
-}
-
-impl From<bool> for Bool {
-    fn from(value: bool) -> Self {
-        Bool { value }
-    }
-}
-
-impl Into<bool> for Bool {
-    fn into(self) -> bool {
-        self.value
-    }
-}
-
-#[binrw]
-#[derive(Debug)]
-pub struct LenString {
-    length: u32,
-    #[br(count = length)]
-    value: Vec<u8>,
-}
-
-// TODO: Implement this with a generic?
-#[binrw]
-pub struct LenString16 {
-    length: u16,
-    #[br(count = length)]
-    value: Vec<u8>,
-}
-
-#[binrw]
-#[derive(Debug, Clone)]
-pub struct MyNullString {
-    text: NullString,
-}
-
-impl From<String> for MyNullString {
-    fn from(value: String) -> Self {
-        MyNullString { text: value.into() }
-    }
-}
-
-impl Into<String> for MyNullString {
-    fn into(self) -> String {
-        self.text.to_string()
-    }
-}
-
-impl Serialize for LenString {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let strvalue = std::string::String::from_utf8_lossy(&self.value);
-        serializer.serialize_str(&strvalue)
-    }
-}
-
-impl Serialize for LenString16 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let strvalue = std::string::String::from_utf8_lossy(&self.value);
-        serializer.serialize_str(&strvalue)
-    }
-}
-
-impl std::fmt::Debug for LenString16 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", std::string::String::from_utf8_lossy(&self.value))
-    }
-}
-
-impl serde::Serialize for MyNullString {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let strvalue = std::string::String::from_utf8_lossy(&self.text);
-        serializer.serialize_str(&strvalue)
-    }
-}
 
 impl Savegame {
     pub fn from_bytes(data: bytes::Bytes) -> Result<Savegame, Box<dyn Error>> {

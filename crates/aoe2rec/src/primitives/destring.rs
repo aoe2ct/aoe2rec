@@ -5,7 +5,7 @@ use serde::Serialize;
 #[derive(Clone, Default)]
 pub struct DeString {
     #[brw(magic = b"\x60\x0A")]
-    #[bw(calc(value.len().try_into().unwrap()))]
+    #[bw(try_calc = value.len().try_into())]
     #[br(temp)]
     length: u16,
     #[br(count = length, try_map = String::from_utf8)]
@@ -24,12 +24,6 @@ impl From<&String> for DeString {
         Self {
             value: value.clone(),
         }
-    }
-}
-
-impl Into<String> for DeString {
-    fn into(self) -> String {
-        self.value
     }
 }
 

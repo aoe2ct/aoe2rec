@@ -2,7 +2,8 @@ mod ai;
 mod map;
 
 use crate::{
-    read_strings_of_length, write_len_and_string, Bool, DeString, LenString16, MyNullString,
+    read_strings_of_length, write_len_and_string,
+    primitives::{Bool, DeString, LenString16, MyNullString}
 };
 use ai::{AIFile, AIInfo};
 use binrw::io::{BufReader, NoSeek};

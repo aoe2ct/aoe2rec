@@ -3,8 +3,9 @@ use std::{error::Error, fs::File, io::Cursor};
 use binrw::{binrw, helpers::until_eof, io::BufReader, BinReaderExt, BinWrite};
 
 use crate::{
+    primitives::{MyNullString, DeString},
     header::{EmptySlot, Player},
-    read_strings_of_length, write_len_and_string, DeString, MyNullString,
+    read_strings_of_length, write_len_and_string,
 };
 
 pub fn decompress(header_data: Vec<u8>) -> MinimalHeader {
