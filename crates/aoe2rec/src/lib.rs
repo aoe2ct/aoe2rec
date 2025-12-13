@@ -136,6 +136,7 @@ pub enum Operation {
         #[br(temp)]
         #[bw(try_calc = leaderboards.len().try_into())]
         num_leaderboards: u32,
+
         #[br(count = num_leaderboards)]
         leaderboards: Vec<PostGameLeaderboard>,
 
