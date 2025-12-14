@@ -7,8 +7,8 @@ mod aoe2rec_py {
 
     #[pyfunction]
     fn parse_rec(py: Python<'_>, data: Vec<u8>) -> PyResult<Bound<'_, PyAny>> {
-        let rec = aoe2rec::Savegame::from_bytes(data.try_into().unwrap()).unwrap();
-        let pyrec = pythonize(py, &rec).unwrap();
+        let rec = aoe2rec::Savegame::from_bytes(&data.try_into()?).unwrap();
+        let pyrec = pythonize(py, &rec)?;
         Ok(pyrec)
     }
 
@@ -18,7 +18,7 @@ mod aoe2rec_py {
     impl Savegame {
         #[new]
         fn from_bytes(data: Vec<u8>) -> PyResult<Self> {
-            let savegame = aoe2rec::Savegame::from_bytes(data.try_into().unwrap()).unwrap();
+            let savegame = aoe2rec::Savegame::from_bytes(&data.try_into()?).unwrap();
             Ok(Savegame(savegame))
         }
     }
