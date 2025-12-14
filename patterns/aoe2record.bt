@@ -72,6 +72,12 @@ struct Action {
 // Operations
 
 struct Operation0 {
+    uint32 unknown1[26];
+    uint32 unknown2[62];
+    uint32 unknown3;
+};
+
+/*struct Operation0 {
     uint8 unknown1[4];
     uint32 sync;
     uint8 unknown2[4];
@@ -82,7 +88,7 @@ struct Operation0 {
     }
 
     uint8 unknown4[8];
-};
+};*/
 
 struct OperationAction {
    uint32 length;
@@ -106,10 +112,16 @@ struct OperationChat {
     LengthString message;
 };
 
-struct OperationAddAttribute {
-    uint16 player_id;
-    uint8 attribute;
-    float amount;
+struct OperationPreGame {
+    uint32 checksum_interval;
+    int is_multiplayer : 1;
+    int       : 31;
+    uint32 rec_owner;
+    int reveal_map : 1;
+    int       : 31;
+    uint32 use_sequence_numbers;
+    uint32 number_of_chapters;
+    uint32 aok_or_de;
 };
 
 struct PostGamePlayer {
@@ -160,7 +172,7 @@ struct Operation {
            OperationChat chat;
            break;
         case 5:
-           OperationAddAttribute add_attribute;
+           OperationPreGame pre_game;
            break;
         case 6:
            OperationPostGame post_game;
@@ -172,25 +184,11 @@ struct Operation {
 
 // Aoe2Record
 
-struct Aoe2RecordMeta {
-    uint32 checksum_interval;
-    int is_multiplayer : 1;
-    int       : 31;
-    uint32 rec_owner;
-    int reveal_map : 1;
-    int       : 31;
-    uint32 use_sequence_numbers;
-    uint32 number_of_chapters;
-    uint32 aok_or_de;
-};
-
 struct Aoe2Chapter {
     uint32 compressed_data_end <format=hex>;
     uint32 next_chapter_address <format=hex>;
     uint8 compressed_data[compressed_data_end - FTell()];
 
-    uint32 log_version;
-    Aoe2RecordMeta meta;
     //while(!FEof()) {
     if(next_chapter_address != 0) {
         while(FTell() < next_chapter_address) {
