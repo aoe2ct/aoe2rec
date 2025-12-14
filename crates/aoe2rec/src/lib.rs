@@ -50,8 +50,6 @@ pub struct Chapter {
     #[br(count = header_length, map = decompress)]
     //#[bw(map = compress)] // TODO: compression
     header: ChapterHeader,
-    log_version: u32,
-    meta: ChapterMeta,
 
     #[br(temp, try_calc = stream.stream_position()?.try_into())]
     operations_start_address: u32,
@@ -63,24 +61,20 @@ pub struct Chapter {
 
 #[binrw]
 #[derive(Serialize, Debug)]
-pub struct ChapterMeta {
-    pub checksum_interval: u32,
-    #[brw(pad_after = 3)]
-    pub multiplayer: Bool,
-    pub rec_owner: u32,
-    #[brw(pad_after = 3)]
-    pub reveal_map: Bool,
-    pub use_sequence_numbers: u32,
-    pub number_of_chapters: u32,
-    pub aok_or_de: u32,
-}
-
-#[binrw]
-#[derive(Serialize, Debug)]
 #[brw(import(major: u16))]
 pub enum Operation {
     #[brw(magic = b"\xCE\xA4\x59\xB1\x05\xDB\x7B\x43")]
     EndOfReplay,
+
+    #[brw(magic = 0u32)]
+    Unknown0 {
+        unk1: [u32; 26],
+        unk2: u32,
+        unk3: [u32; 16],
+        unk4: [u32; 16],
+        unk5: [u32; 16],
+        unk6: [u32; 14],
+    },
 
     #[brw(magic = 1u32)]
     Action {
@@ -96,11 +90,16 @@ pub enum Operation {
     #[brw(magic = 4u32)]
     Chat { padding: [u8; 4], text: LenString32 },
     #[brw(magic = 5u32)]
-    AddAttribute {
-        player_id: u8,
-        #[br(pad_after = 1)]
-        attribute: u8,
-        amount: f32,
+    PreGame {
+        checksum_interval: u32,
+        #[brw(pad_after = 3)]
+        multiplayer: Bool,
+        rec_owner: u32,
+        #[brw(pad_after = 3)]
+        reveal_map: Bool,
+        use_sequence_numbers: u32,
+        number_of_chapters: u32,
+        aok_or_de: u32,
     },
     #[brw(magic = 6u32)]
     PostGame {
