@@ -12,7 +12,7 @@ pub struct MyNullString {
 
 impl From<String> for MyNullString {
     fn from(value: String) -> Self {
-        MyNullString { value: value.into() }
+        MyNullString { value }
     }
 }
 

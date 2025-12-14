@@ -35,9 +35,7 @@ impl From<&String> for DeString {
 
 impl From<String> for DeString {
     fn from(value: String) -> Self {
-        Self {
-            value: value,
-        }
+        Self { value }
     }
 }
 

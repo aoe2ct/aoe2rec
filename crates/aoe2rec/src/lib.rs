@@ -5,8 +5,8 @@ mod primitives;
 pub mod summary;
 mod tests;
 
-use binrw::io::TakeSeekExt;
 use binrw::helpers::until_eof;
+use binrw::io::TakeSeekExt;
 use binrw::io::{BufReader, Cursor};
 use binrw::{binread, binrw, BinReaderExt, BinResult, BinWriterExt};
 use header::{decompress, ChapterHeader};
@@ -29,7 +29,7 @@ fn chapter_size(current_offset: u32, next_offset: u32) -> u32 {
         next_offset.saturating_sub(current_offset)
     } else {
         // Don't limit bytes for the final chapter.
-        u32::MAX.into()
+        u32::MAX
     }
 }
 
