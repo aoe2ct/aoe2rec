@@ -5,3 +5,6 @@ edition = "2024"
 
 [dependencies]
 aoe2rec = { path = "../aoe2rec" }
+tracing = "0.1.43"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+zip = "6.0.0"
