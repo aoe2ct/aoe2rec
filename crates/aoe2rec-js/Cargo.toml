@@ -5,34 +5,34 @@ authors = ["Stéphane Bisinger <stephane@sbisinger.ch>"]
 description = "WASM version of aoe2rec to parse Age of Empires II: Definitive Edition recorded games in the browser"
 license = "MIT"
 edition = "2021"
+repository = "https://github.com/aoe2ct/aoe2rec"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[features]
-default = ["console_error_panic_hook"]
-
 [dependencies]
-wasm-bindgen = "0.2.84"
-
+aoe2rec = { path = "../aoe2rec", version = "0.5.2" }
+bytes = { version = "1.9.0", features = ["std"] }
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
 # code size when deploying.
 console_error_panic_hook = { version = "0.1.7", optional = true }
-aoe2rec = { version = "0.5.2", path = "../aoe2rec" }
-bytes = { version = "1.9.0", features = ["std"] }
-serde-wasm-bindgen = "0.6.5"
 js-sys = "0.3.76"
+serde-wasm-bindgen = "0.6.5"
+wasm-bindgen = "0.2.84"
 web-sys = { version = "0.3.76", features = [
-	"Event",
-	"EventTarget",
-	"File",
-	"FileList",
-	"FileReader",
-	"HtmlInputElement",
-	"ProgressEvent",
+  "Event",
+  "EventTarget",
+  "File",
+  "FileList",
+  "FileReader",
+  "HtmlInputElement",
+  "ProgressEvent",
 ] }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"
+
+[features]
+default = ["console_error_panic_hook"]
