@@ -11,7 +11,6 @@ async fn main() {
     // build our application with a single route
     let max_size = 15 * 1024usize.pow(2);
     let app = Router::new()
-        .route("/", get(aoe2js_api::hello))
         .route(
             "/",
             post(aoe2js_api::aoe2record).layer(DefaultBodyLimit::max(max_size)),

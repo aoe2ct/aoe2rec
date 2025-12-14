@@ -5,10 +5,6 @@ use axum::{
     Json,
 };
 
-pub async fn hello() -> &'static str {
-    return "Hello, Rowld!";
-}
-
 pub async fn aoe2record(mut record: Multipart) -> Response {
     while let Some(field) = record.next_field().await.unwrap() {
         let name = field.name().unwrap().to_string();
