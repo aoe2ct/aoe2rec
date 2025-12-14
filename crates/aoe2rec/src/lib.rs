@@ -174,7 +174,19 @@ pub enum OperationType {
 pub struct SyncOperation {}
 
 impl Savegame {
-    pub fn from_bytes(data: bytes::Bytes) -> Result<Savegame, Box<dyn Error>> {
+    pub fn from_reader<R>(mut reader: R) -> Result<Savegame, Box<dyn Error>>
+    where
+        R: std::io::Read + std::io::Seek,
+    {
+        let savegame: Savegame = reader.read_le()?;
+        Ok(savegame)
+    }
+    pub fn from_slice(data: &[u8]) -> Result<Savegame, Box<dyn Error>> {
+        let mut breader = BufReader::new(Cursor::new(data));
+        let savegame: Savegame = breader.read_le()?;
+        Ok(savegame)
+    }
+    pub fn from_bytes(data: &bytes::Bytes) -> Result<Savegame, Box<dyn Error>> {
         let mut breader = BufReader::new(Cursor::new(data));
         let savegame: Savegame = breader.read_le()?;
         Ok(savegame)
