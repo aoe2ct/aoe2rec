@@ -1,134 +1,138 @@
-pub mod actions;
-pub mod header;
+mod actions;
+mod header;
 pub mod minimal;
+mod primitives;
 pub mod summary;
 mod tests;
 
 use binrw::helpers::until_eof;
-use binrw::io::{BufReader, Cursor, SeekFrom};
-use binrw::{binrw, BinReaderExt, BinResult, BinWriterExt, NullString};
-use header::{decompress, RecHeader};
+use binrw::io::TakeSeekExt;
+use binrw::io::{BufReader, Cursor};
+use binrw::{binread, binrw, BinReaderExt, BinResult, BinWriterExt};
+use header::{decompress, ChapterHeader};
+use primitives::{Bool, DeString, LenString32};
 use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
 use summary::GameTeam;
 
-#[binrw]
+//#[binrw] // TODO: make writable again
+#[binread]
 #[derive(Serialize)]
 pub struct Savegame {
-    pub length: u32,
-    pub other: u32,
-    #[br(count = length - 8, map = decompress)]
-    pub zheader: RecHeader,
-    pub log_version: u32,
-    pub meta: Meta,
-    #[br(parse_with = until_eof, args(zheader.version_major))]
-    pub operations: Vec<Operation>,
+    #[br(parse_with = until_eof)]
+    chapters: Vec<Chapter>,
+}
+
+fn chapter_size(current_offset: u32, next_offset: u32) -> u32 {
+    if next_offset > 0 {
+        next_offset.saturating_sub(current_offset)
+    } else {
+        // Don't limit bytes for the final chapter.
+        u32::MAX
+    }
+}
+
+#[binread]
+#[brw(little, stream = stream)] // TODO: re-introduce write-capability
+#[derive(Serialize)]
+pub struct Chapter {
+    #[br(temp)]
+    // #[bw(try_calc = )] // TODO: calculate address
+    header_end_address: u32,
+    #[br(temp)]
+    // #[bw(try_calc = )] // TODO: calculate address
+    next_chapter_address: u32,
+
+    #[br(try_calc = (Into::<u64>::into(header_end_address) - stream.stream_position()?).try_into())]
+    header_length: u32,
+
+    #[br(count = header_length, map = decompress)]
+    //#[bw(map = compress)] // TODO: compression
+    header: ChapterHeader,
+
+    #[br(temp, try_calc = stream.stream_position()?.try_into())]
+    operations_start_address: u32,
+
+    #[br(map_stream = |stream| stream.take_seek(chapter_size(operations_start_address, next_chapter_address).into()))]
+    #[br(parse_with = until_eof)]
+    operations: Vec<Operation>,
 }
 
 #[binrw]
 #[derive(Serialize, Debug)]
-pub struct Meta {
-    pub checksum_interval: u32,
-    #[br(pad_after = 3)]
-    #[bw(pad_after = 3)]
-    pub multiplayer: Bool,
-    pub rec_owner: u32,
-    #[br(pad_after = 3)]
-    #[bw(pad_after = 3)]
-    pub reveal_map: Bool,
-    pub use_sequence_numbers: u32,
-    pub number_of_chapters: u32,
-    pub aok_or_de: u32,
-}
-
-#[binrw]
-#[br(stream = s)]
-#[derive(Serialize, Debug)]
-pub struct ChapterData {
-    chapter_end: u32,
-    chapter_address: u32,
-    #[br(calc=s.stream_position().unwrap())]
-    current_position: u64,
-    #[br(count = (chapter_end as u64) - current_position)]
-    chapter_data: Vec<u8>,
-}
-
-#[binrw]
-#[derive(Serialize, Debug)]
-#[br(import(major: u16))]
+#[brw(import(major: u16))]
 pub enum Operation {
-    #[br(magic = 1u32)]
+    #[brw(magic = b"\xCE\xA4\x59\xB1\x05\xDB\x7B\x43")]
+    EndOfReplay,
+
+    #[brw(magic = 0u32)]
+    Unknown0 {
+        unk1: [u32; 26],
+        unk2: u32,
+        unk3: [u32; 16],
+        unk4: [u32; 16],
+        unk5: [u32; 16],
+        unk6: [u32; 14],
+    },
+
+    #[brw(magic = 1u32)]
     Action {
         length: u32,
-        #[br(pad_size_to = length, args(length, major))]
+        #[br(pad_size_to = length, args(major))]
         action_data: actions::ActionData,
         world_time: u32,
-        #[serde(skip_serializing)]
-        #[br(if(matches!(action_data, actions::ActionData::Chapter { player_id: _, action_length: _ })))]
-        chap: Option<ChapterData>,
     },
-    #[br(magic = 2u32)]
-    Sync {
-        time_increment: u32,
-        #[br(restore_position)]
-        next: u32,
-        #[br(if (next == 0))]
-        checksum: Option<SyncChecksum>,
-    },
-    #[br(magic = 3u32)]
+    #[brw(magic = 2u32)]
+    Sync { time_increment: u32 },
+    #[brw(magic = 3u32)]
     Viewlock { x: f32, y: f32, player_id: u32 },
-    #[br(magic = 4u32)]
-    Chat { padding: [u8; 4], text: LenString },
-    #[br(magic = 5u32)]
-    AddAttribute {
-        player_id: u8,
-        #[br(pad_after = 1)]
-        attribute: u8,
-        amount: f32,
+    #[brw(magic = 4u32)]
+    Chat { padding: [u8; 4], text: LenString32 },
+    #[brw(magic = 5u32)]
+    PreGame {
+        checksum_interval: u32,
+        #[brw(pad_after = 3)]
+        multiplayer: Bool,
+        rec_owner: u32,
+        #[brw(pad_after = 3)]
+        reveal_map: Bool,
+        use_sequence_numbers: u32,
+        number_of_chapters: u32,
+        aok_or_de: u32,
     },
-    #[br(magic = 6u32)]
+    #[brw(magic = 6u32)]
     PostGame {
-        #[br(seek_before = SeekFrom::End(-12))]
-        version: u32,
-        #[br(seek_before = SeekFrom::Current(-8))]
-        num_blocks: u32,
-        #[br(count = num_blocks, seek_before = SeekFrom::Current(-8), restore_position)]
-        blocks: Vec<PostGameBlock>,
-        version_repeat: u32,
-        #[br(magic = b"\xce\xa4\x59\xb1\x05\xdb\x7b\x43")]
-        end_bit: (),
-    },
-}
+        game_length: u32,
+        unk1: u32,
+        unk2: u32,
 
-#[binrw]
-#[derive(Serialize, Debug)]
-pub enum PostGameBlock {
-    #[br(magic = 1u32)]
-    WorldTime {
-        #[br(seek_before=SeekFrom::Current(-8))]
-        length: u32,
-        #[br(seek_before=SeekFrom::Current(-(length as i64) - 4))]
-        world_time: u32,
-    },
-    #[br(magic = 2u32)]
-    Leaderboards {
-        #[br(seek_before = SeekFrom::Current(-8))]
-        length: u32,
-        #[br(seek_before = SeekFrom::Current(-(length as i64) - 4))]
+        #[br(temp)]
+        #[bw(try_calc = leaderboards.len().try_into())]
+        num_leaderboards: u32,
+
+        #[br(temp)]
+        #[bw(try_calc = leaderboards.len().try_into())]
         num_leaderboards: u32,
         #[br(count = num_leaderboards)]
-        leaderboards: Vec<Leaderboard>,
-        #[br(seek_before = SeekFrom::Current(-(length as i64) - 4))]
-        realignment_field: (),
+        leaderboards: Vec<PostGameLeaderboard>,
+
+        unk3: u32,
+        unk4: u32,
+        unk5: u32,
+        unk6: u32,
     },
 }
 
 #[binrw]
 #[derive(Serialize, Debug)]
-pub struct Leaderboard {
+pub struct PostGameLeaderboard {
     pub id: u32,
-    pub unknown1: u16,
+    pub unk1: u8,
+    pub unk2: u8,
+
+    #[br(temp)]
+    #[bw(try_calc = players.len().try_into())]
     pub num_players: u32,
     #[br(count = num_players)]
     pub players: Vec<LeaderboardPlayer>,
@@ -157,8 +161,7 @@ pub struct SyncChecksum {
 
 #[binrw]
 #[derive(Serialize)]
-#[br(repr = u32)]
-#[bw(repr = u32)]
+#[brw(repr = u32)]
 pub enum OperationType {
     Action = 1,
     Sync,
@@ -170,190 +173,54 @@ pub enum OperationType {
 #[derive(Serialize)]
 pub struct SyncOperation {}
 
-#[binrw]
-#[derive(Copy, Clone)]
-pub struct Bool {
-    #[br(map = |x: u8| x == 1)]
-    #[bw(map = |ranked: &bool| match ranked { true => 1u8, false => 0u8})]
-    value: bool,
-}
-
-impl std::fmt::Debug for Bool {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.value)
-    }
-}
-
-impl Serialize for Bool {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_bool(self.value)
-    }
-}
-
-impl From<bool> for Bool {
-    fn from(value: bool) -> Self {
-        Bool { value }
-    }
-}
-
-impl Into<bool> for Bool {
-    fn into(self) -> bool {
-        self.value
-    }
-}
-
-#[binrw]
-#[derive(Debug)]
-pub struct LenString {
-    length: u32,
-    #[br(count = length)]
-    value: Vec<u8>,
-}
-
-// TODO: Implement this with a generic?
-#[binrw]
-pub struct LenString16 {
-    length: u16,
-    #[br(count = length)]
-    value: Vec<u8>,
-}
-
-#[binrw]
-#[derive(Clone, Default)]
-pub struct DeString {
-    #[br(magic = b"\x60\x0A")]
-    #[bw(magic = b"\x60\x0A")]
-    #[bw(calc(value.len().try_into().unwrap()))]
-    length: u16,
-    #[br(count = length)]
-    value: Vec<u8>,
-}
-
-impl From<&DeString> for String {
-    fn from(value: &DeString) -> Self {
-        std::string::String::from_utf8_lossy(&value.value).to_string()
-    }
-}
-
-impl From<&String> for DeString {
-    fn from(value: &String) -> Self {
-        Self {
-            value: value.as_bytes().to_vec(),
-        }
-    }
-}
-
-impl Into<String> for DeString {
-    fn into(self) -> String {
-        std::string::String::from_utf8_lossy(&self.value).to_string()
-    }
-}
-
-#[binrw]
-#[derive(Debug, Clone)]
-pub struct MyNullString {
-    text: NullString,
-}
-
-impl From<String> for MyNullString {
-    fn from(value: String) -> Self {
-        MyNullString { text: value.into() }
-    }
-}
-
-impl Into<String> for MyNullString {
-    fn into(self) -> String {
-        self.text.to_string()
-    }
-}
-
-impl std::fmt::Debug for DeString {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", std::string::String::from_utf8_lossy(&self.value))
-    }
-}
-
-impl Serialize for DeString {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let strvalue = std::string::String::from_utf8_lossy(&self.value);
-        serializer.serialize_str(&strvalue)
-    }
-}
-
-impl Serialize for LenString {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let strvalue = std::string::String::from_utf8_lossy(&self.value);
-        serializer.serialize_str(&strvalue)
-    }
-}
-
-impl Serialize for LenString16 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let strvalue = std::string::String::from_utf8_lossy(&self.value);
-        serializer.serialize_str(&strvalue)
-    }
-}
-
-impl std::fmt::Debug for LenString16 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", std::string::String::from_utf8_lossy(&self.value))
-    }
-}
-
-impl serde::Serialize for MyNullString {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let strvalue = std::string::String::from_utf8_lossy(&self.text);
-        serializer.serialize_str(&strvalue)
-    }
-}
-
 impl Savegame {
-    pub fn from_bytes(data: bytes::Bytes) -> Result<Savegame, Box<dyn Error>> {
+    pub fn from_reader<R>(mut reader: R) -> Result<Savegame, Box<dyn Error>>
+    where
+        R: std::io::Read + std::io::Seek,
+    {
+        let savegame: Savegame = reader.read_le()?;
+        Ok(savegame)
+    }
+    pub fn from_slice(data: &[u8]) -> Result<Savegame, Box<dyn Error>> {
         let mut breader = BufReader::new(Cursor::new(data));
         let savegame: Savegame = breader.read_le()?;
-        return Ok(savegame);
+        Ok(savegame)
+    }
+    pub fn from_bytes(data: &bytes::Bytes) -> Result<Savegame, Box<dyn Error>> {
+        let mut breader = BufReader::new(Cursor::new(data));
+        let savegame: Savegame = breader.read_le()?;
+        Ok(savegame)
     }
     pub fn from_file(path: &std::path::Path) -> Result<Savegame, Box<dyn Error>> {
         let file = File::open(path)?;
         let mut reader = BufReader::new(file);
         let savegame: Savegame = reader.read_le()?;
-        return Ok(savegame);
+        Ok(savegame)
+    }
+
+    pub fn operations(&self) -> impl Iterator<Item = &Operation> {
+        self.chapters
+            .iter()
+            .flat_map(|chapter| chapter.operations.iter())
     }
 
     pub fn get_duration(&self) -> u32 {
-        self.operations
-            .iter()
-            .fold(self.zheader.replay.world_time, |duration, operation| {
-                return match operation {
-                    Operation::Sync { time_increment, .. } => duration + time_increment,
-                    _ => duration,
-                };
-            })
+        self.operations().fold(
+            self.chapters[0].header.replay.world_time,
+            |duration, operation| match operation {
+                Operation::Sync { time_increment, .. } => duration + time_increment,
+                _ => duration,
+            },
+        )
     }
 
     pub fn get_resignations(&self) -> Vec<u8> {
-        self.operations
-            .iter()
+        self.operations()
             .map(|operation| match operation {
-                Operation::Action { action_data, .. } => match action_data {
-                    actions::ActionData::Resign { player_id, .. } => *player_id,
-                    _ => 100,
-                },
+                Operation::Action {
+                    action_data: actions::ActionData::Resign { player_id, .. },
+                    ..
+                } => *player_id,
                 _ => 100,
             })
             .filter(|player_id| *player_id < 100)
@@ -363,13 +230,13 @@ impl Savegame {
     pub fn get_summary(&self) -> summary::SavegameSummary<'_> {
         summary::SavegameSummary {
             header: summary::SummaryHeader {
-                game: &self.zheader.game,
-                version_minor: self.zheader.version_minor,
-                version_major: self.zheader.version_major,
-                build: self.zheader.build,
-                timestamp: self.zheader.timestamp,
-                game_settings: &self.zheader.game_settings,
-                replay: &self.zheader.replay,
+                game: &self.chapters[0].header.game,
+                version_minor: self.chapters[0].header.version_minor,
+                version_major: self.chapters[0].header.version_major,
+                build: self.chapters[0].header.build,
+                timestamp: self.chapters[0].header.timestamp,
+                game_settings: &self.chapters[0].header.game_settings,
+                replay: &self.chapters[0].header.replay,
             },
             duration: self.get_duration(),
             resignations: self.get_resignations(),

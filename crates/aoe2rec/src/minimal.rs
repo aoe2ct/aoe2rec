@@ -4,14 +4,16 @@ use binrw::{binrw, helpers::until_eof, io::BufReader, BinReaderExt, BinWrite};
 
 use crate::{
     header::{EmptySlot, Player},
-    read_strings_of_length, write_len_and_string, DeString, MyNullString,
+    primitives::{DeString, MyNullString},
+    read_strings_of_length, write_len_and_string,
 };
 
 pub fn decompress(header_data: Vec<u8>) -> MinimalHeader {
     let (header, _) = yazi::decompress(&header_data, yazi::Format::Raw).unwrap();
     let mut hreader = BufReader::new(Cursor::new(header));
     let parsed_header: MinimalHeader = hreader.read_le().unwrap();
-    return parsed_header;
+
+    parsed_header
 }
 
 pub fn compress(header_data: &MinimalHeader) -> Vec<u8> {
@@ -28,7 +30,7 @@ pub fn compress(header_data: &MinimalHeader) -> Vec<u8> {
 #[binrw]
 #[brw(little)]
 pub struct MinimalSave {
-    #[bw(calc = 8u32 + u32::try_from(compress(&zheader).len()).unwrap())]
+    #[bw(calc = 8u32 + u32::try_from(compress(zheader).len()).unwrap())]
     pub length: u32,
     pub other: u32,
     #[br(count = length - 8, map = decompress)]
@@ -222,12 +224,12 @@ impl MinimalSave {
         let file = File::open(path)?;
         let mut reader = BufReader::new(file);
         let savegame: MinimalSave = reader.read_le()?;
-        return Ok(savegame);
+        Ok(savegame)
     }
 
     pub fn from_bytes(data: bytes::Bytes) -> Result<MinimalSave, Box<dyn Error>> {
         let mut breader = BufReader::new(Cursor::new(data));
         let savegame: MinimalSave = breader.read_le()?;
-        return Ok(savegame);
+        Ok(savegame)
     }
 }

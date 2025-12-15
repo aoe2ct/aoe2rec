@@ -2,24 +2,25 @@ mod ai;
 mod map;
 
 use crate::{
-    read_strings_of_length, write_len_and_string, Bool, DeString, LenString16, MyNullString,
+    primitives::{Bool, DeString, LenString16, MyNullString},
+    read_strings_of_length, write_len_and_string,
 };
 use ai::{AIFile, AIInfo};
-use binrw::io::{BufReader, Cursor};
+use binrw::io::{BufReader, NoSeek};
 use binrw::{binrw, BinReaderExt};
 use map::MapInfo;
 use serde::Serialize;
 
-pub fn decompress(header_data: Vec<u8>) -> RecHeader {
-    let (header, _) = yazi::decompress(&header_data, yazi::Format::Raw).unwrap();
-    let mut hreader = BufReader::new(Cursor::new(header));
-    let parsed_header: RecHeader = hreader.read_le().unwrap();
-    return parsed_header;
+pub fn decompress(header_data: Vec<u8>) -> ChapterHeader {
+    let reader = flate2::read::DeflateDecoder::new(&header_data[..]);
+    let parsed_header: ChapterHeader = BufReader::new(NoSeek::new(reader)).read_le().unwrap();
+
+    parsed_header
 }
 
 #[binrw]
 #[derive(Serialize)]
-pub struct RecHeader {
+pub struct ChapterHeader {
     pub game: MyNullString,
     pub save: f32,
     #[br(map = |x: u16| (x as f32 / 6553.6).round() as u16)]
@@ -367,7 +368,7 @@ pub struct Initial {
     pub particles: Vec<u8>,
     pub identifier: u32,
     #[serde(skip_serializing)]
-    #[br(count = 1, args { inner: (num_players,major) })]
+    #[br(count = 1, args { inner: (num_players, major) })]
     pub players: Vec<PlayerInit>,
     #[serde(skip_serializing)]
     pub unknown1: [u8; 21],
@@ -427,9 +428,15 @@ pub struct PlayerInit {
     pub allied_los: u32,
     pub allied_victory: Bool,
     pub player_name: LenString16,
-    #[br(magic = b"\x16")]
+
+    //#[br(magic = b"\x16")]
+    unk1: u8,
+
     pub header_data_count: i32,
-    #[br(magic = b"\x21")]
+
+    //#[br(magic = b"\x21")]
+    unk2: u8,
+
     #[br(count=header_data_count)]
     pub player_stats: Vec<f32>,
     #[br(count=header_data_count)]
@@ -443,15 +450,23 @@ pub struct PlayerInit {
     pub culture: u8,
     pub civilization: u8,
     pub game_status: u8,
-    #[br(pad_after = 1)]
+    //#[br(dbg, pad_after = 1)]
     pub resigned: Bool,
-    #[br(pad_after = 1)]
+    unk5: u8,
+
     pub player_color: u8,
+    unk6: u8,
+
     #[serde(skip_serializing)]
-    #[br(magic = b"\x00\x0B")]
+    //#[br(magic = b"\x00\x0B")]
+    unk3: u16,
+
     pub unknown3: u8,
+
     #[serde(skip_serializing)]
-    #[br(magic = b"\x0B")]
+    //#[br(magic = b"\x0B")]
+    unk4: u8,
+
     pub unknown4: [u32; 8],
     #[serde(skip_serializing)]
     pub unknown5: f32,

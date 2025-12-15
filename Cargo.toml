@@ -11,6 +11,7 @@ members = [
 	"crates/aoe2js",
 	"crates/aoe2js_api",
 	"crates/aoe2rec",
+	"crates/aoe2rec-cli",
 	"crates/aoe2rec-js",
 	"crates/aoe2rec-py",
 ]
