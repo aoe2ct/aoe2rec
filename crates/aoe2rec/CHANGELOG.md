@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.6.0...aoe2rec-v0.7.0) - 2026-02-21
+
+### Other
+
+- Improve handling of Last Chieftains recs
+
 ## [0.6.0](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.5.2...aoe2rec-v0.6.0) - 2026-02-14
 
 ### Other
