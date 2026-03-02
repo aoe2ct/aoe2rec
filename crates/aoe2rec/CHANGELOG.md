@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.7.0...aoe2rec-v0.7.1) - 2026-03-02
+
+### Other
+
+- Correct the lobby settings to account for the DeStrings added in 67.2
+
 ## [0.7.0](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.6.0...aoe2rec-v0.7.0) - 2026-02-21
 
 ### Other
