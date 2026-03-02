@@ -41,6 +41,10 @@ fn find_start_of_objects() {
 struct DeString {
     type::Magic<"\x60\x0A">;
     std::string::SizedString<u16> string;
+}[[format("de_string_fmt")]];
+
+fn de_string_fmt(ref DeString s) {
+  return s.string;
 };
 
 struct DeStringArray {
@@ -387,13 +391,31 @@ struct SavedView {
 };
 
 enum Resource : s16 {
-  Food,    // 0x00
-  Wood,
-  Stone,
-  Gold,
-  Decay = 0x0C,
-  Fish = 0x11,
   None = 0xFFFF,
+  FoodStorage = 0,
+  WoodStorage,
+  StoneStorage,
+  GoldStorage,
+  PopulationHeadroom,
+  ConvertionRange,
+  CurrentAge,
+  RelicsCaptured,
+  UnusedTradeBonus,
+  TradeGoods,
+  UnusedTradeProduction,
+  CurrentPopulation,
+  CorpseDecayTime,
+  RemarkableDiscovery,
+  MonumentsCaptured,
+  MeatStorage,
+  BerryStorage,
+  FishStorage,
+  Unused,
+  TotalUnitsOwned,
+  UnitsKilled,
+  TechnologyCount,
+  PercMapExplored
+  // TODO: Many more
 };
 
 struct Sprite {
@@ -752,11 +774,6 @@ struct ActionUnit : MovingUnit {
 };
 
 struct Weapon {
-    u16 type;
-    u16 value;
-};
-
-struct BaseCombatUnit : ActionUnit {
     u16 base_armour;
     u16 num_weapons;
     Weapon weapons[num_weapons];
@@ -779,6 +796,11 @@ struct BaseCombatUnit : ActionUnit {
     u16 displayed_attack;
     float displayed_range;
     float displayed_reload_time;
+};
+
+struct BaseCombatUnit : ActionUnit {
+    u16 type;
+    u16 value;
 };
 
 struct MissileUnit : BaseCombatUnit {
@@ -848,25 +870,26 @@ struct BuildingUnit : CombatUnit {
 };
 
 enum UnitType : u8 {
-    BaseUnit = 10,
-    BaseUnit = 15,
+    EyeCandy = 10,
+    TreeAOK = 15,
     AnimatedUnit = 20,
-    AnimatedUnit = 25,
+    Doppelganger = 25,
     MovingUnit = 30,
     ActionUnit = 40,
     BaseCombatUnit = 50,
     MissileUnit = 60,
     CombatUnit = 70,
     BuildingUnit = 80,
+    TreeAOE = 90
 };
 
 struct Unit {
     UnitType type;
     match (type) {
-        (UnitType::BaseUnit): BaseUnit [[inline]];
-        (15): BaseUnit [[inline]];
-        (20): AnimatedUnit [[inline]];
-        (25): AnimatedUnit [[inline]];
+        (UnitType::EyeCandy): BaseUnit [[inline]];
+        (UnitType::TreeAOK): BaseUnit [[inline]];
+        (UnitType::AnimatedUnit): AnimatedUnit [[inline]];
+        (UnitType::Doppelganger): AnimatedUnit [[inline]];
         (30): MovingUnit [[inline]];
         (40): ActionUnit [[inline]];
         (50): BaseCombatUnit [[inline]];
@@ -1115,7 +1138,7 @@ struct Object {
     }
 }[[format_read("format_object")]];
 
-fn format_object(Object object) {
+fn format_object(ref Object object) {
     return std::format("type: {}", object.type);
 };
 
@@ -1144,9 +1167,10 @@ struct UnknownInitInner {
       u8 unknown8;
     }
     if (header_game_version >= 64)
-    u16 unknown9[2];
+    u16 unknown10;
+    u16 unknown9;
     if (header_game_version >= 66)
-    u8 unknown10;
+    u8 unknown11;
 };
 
 struct UnknownInit {
@@ -1155,9 +1179,9 @@ struct UnknownInit {
   UnknownInitInner unknown2[length];
 };
 
-struct UnknownInit2 {
+struct EnabledObjects {
   u32 count;
-  u32 unknown[count];
+  u32 enabled[count];
 };
 
 struct InitMoving {
@@ -1167,16 +1191,97 @@ struct InitMoving {
   if (header_game_version >= 66) {
    u8 unknown1[7];
   }
+  if (header_game_version >= 67.2) {
+    u8 unknown_67_2_2;
+  }
 };
 
-struct AttackBonus {
-  u16 class;
+enum AttackArmorType : u16 {
+  Unused = 0,
+  Infantry,
+  HeavyWarships,
+  BasePierce,
+  BaseMelee,
+  ElephantUnits,
+  Unused1,
+  Unused2,
+  Cavalry,
+  Unused3,
+  Unused4,
+  AllBuildings,
+  Unused5,
+  StoneWalls,
+  PredatorAnimals,
+  Archers,
+  ShipsSaboteur,
+  RamsTrebsSTowers,
+  Trees,
+  UniqueUnits,
+  SiegeWeapons,
+  StandardBuildings,
+  WallsAndGates,
+  GunpowderUnits,
+  HuntedPredatorAnimals,
+  Monks,
+  Castles,
+  Spearmen,
+  CavalryArchers,
+  ShockInfantry,
+  Camels,
+  UnblockableMelee,
+  Condottiero,
+  Unused6,
+  FishingShip,
+  Mamelukes,
+  Heroes,
+  HeavySiege,
+  Skirmishers,
+  RoyalHeirs
+};
+
+enum TerrainTable : s16 {
+  None = 0xFFFF,
+  All = 0,
+  LandShallows,
+  Beach,
+  WaterLargeWave,
+  Land,
+  Nothing,
+  Water,
+  AllWaterFootDust,
+  LandFarm,
+  Nothing1,
+  LandBeach,
+  LandFarm1,
+  AllBridgeGroundImpact,
+  WaterSmallWave,
+  AllBridgeArrowDecay,
+  WaterLargeWave1,
+  GrassBeach,
+  WaterBridgeBeach,
+  AllBridgeSpearDecay,
+  OnlyWaterIce,
+  AllWaterWheelTrack,
+  ShallowWater,
+  AllBridgeDartDecay,
+  AllBridgeArrowDecay1,
+  AllBridgeGroundImpact1,
+  AllBridgeSpearDecay1,
+  AllBridgeDartDecay1,
+  AllBridgeLaserImpact,
+  AllWaterCavalryDust,
+  AllWaterWheelTrack1,
+  WaterMediumWave,
+  AllWaterWheelTrack2
+};
+
+struct AttackArmorBonus {
+  AttackArmorType class;
   s16 bonus;
-};
+}[[format("fmt_attack_bonus")]];
 
-struct Armor {
-  u16 class;
-  s16 value;
+fn fmt_attack_bonus(AttackArmorBonus ab) {
+  return std::format("{}: {}", ab.class, ab.bonus);
 };
 
 struct InitBaseUnit {
@@ -1188,79 +1293,117 @@ struct InitAnimatedUnit {
 
 struct InitBaseOffensive {
   float speed;
-  u32 unknown1;
-  s16 unknown2;
-  s16 unknown3;
+  float rotation_speed;
+  s16 running_graphic_1;
+  s16 running_graphic_2;
   if (header_game_version >= 66) {
     u8 unknown_ibo_23[7];
   }
+  if (header_game_version >= 67.2) {
+    u8 unknown_67_2_1;
+  }
   float line_of_sight;
-  float unknown4;
+  float work_rate;
   float unknown5;
   if (header_game_version >= 64)
   u8 unknown6;
-  if (header_game_version >= 66)
-  u8 unknown29[13];
-  u16 unknown7;
+  if (header_game_version >= 66) {
+    s16 attack_sound;
+    s16 move_sound;
+    u32 attack_sound_big;
+    u32 move_sound_big;
+    u8 unknown29;
+  }
+  u16 base_armour;
   u16 attack_bonus_count;
-  AttackBonus attack_bonus[attack_bonus_count];
+  AttackArmorBonus attack_bonus[attack_bonus_count];
   u16 armor_count;
-  Armor armor_classes[armor_count];
+  AttackArmorBonus armor_classes[armor_count];
   float reload_time;
-  float range;
-  u16 accuracy;
-  s16 unknown8;
-  s16 unknown9;
-  u8 unknown10[12];
-  u16 frame_delay;
-  u8 unknown11;
-  u16 melee_armor;
-  u16 attack;
-  float range2;
-  u16 unknown12;
-  u16 unknown13;
-  u8 unknown14;
-  u16 unknown15;
-  float unknown16[3];
+  float max_range;
+  s16 accuracy;
+  s16 projectile_unit;
+  TerrainTable terrain_defense_bonus;
+  float bonus_damage_resist;
+  float blast_width;
+  float min_range;
+  s16 frame_delay;
+  u8 blast_attack_level;
+  s16 melee_armor;
+  s16 attack;
+  float displayed_range;
+  u8 break_off_combat;
+  float attack_dispersion;
+  s16 attack_graphic;
+  float blast_damage;
+  float unknown15;
+  float friendly_fire;
   if (header_game_version >= 64) {
-    s16 unknown17;
-    float unknown18;
-    s16 unknown19;
+    s16 interrupt_frame;
+    float garrison_firepower;
+    s16 attack_graphic_2;
   }
   if (header_game_version >= 66) {
-    float unknown30[3];
+    Vector graphic_displacement;
   }
 };
 
-struct InitCombat : InitBaseOffensive {
+struct UnitCost {
+  Resource type;
+  s16 cost;
+  s16 deduct; // 0 or 1
+}[[format("fmt_unit_cost")]];
 
-  Resource resource_type_1;
-  s16 cost_1;
-  s16 resource_unknown_1;
-  Resource resource_type_2;
-  s16 cost_2;
-  s16 resource_unknown_2;
-  s16 unknown20[3];
+fn fmt_unit_cost(UnitCost uc) {
+  return std::format("{}: {}", uc.type, uc.cost);
+};
+
+struct TrainLocation {
+  s16 train_time;
+  s16 location_id;
+  u8 button_id;
+  u32 hotkey_id;
+};
+
+struct InitCombat : InitBaseOffensive {
+  UnitCost cost[3];
   if (header_game_version >= 66) {
-    u16 unknown_count;
+    u16 train_locations_count;
+    TrainLocation train_location[train_locations_count];
   }
-  s16 build_time;
   if (header_game_version < 66) {
-    float unknown21;
-    s16 unknown22;
+    s16 build_time;
   }
-  s16 unknown23;
-  u8 unknown38;
-  if (header_game_version >= 66) {
-    u8 unknown31[9 * unknown_count];
-    u8 unknown32;
+  float total_projectiles;
+  u8 max_total_projectiles;
+  u8 unknown23;
+  if (header_game_version < 66) {
+    s16 unknown32;
+    u8 unknown33;
   }
-  u16 unknown26;
-  u8 unknown27[58];
+  u8 unknown26;
+  u16 maybe_displayed_armor;
+  u8 unknown27[3];
+  float max_charge;
+  float recharge_rate;
+  if (header_game_version >= 63) {
+  s16 charge_event;
+  s16 charge_type;
+  s16 charge_target;
+  s32 charge_projectile_unit;
+  u8 unknown28_1[13];
+  }
+  u8 unknown28[4];
+  float min_conversion_time;
+  float max_conversion_time;
+  float conversion_chance;
+  u8 unknown31[7];
   if (header_game_version >= 66) {
-    u8 unknown38;
-    u16 unknown36[3];
-    float unknown37[3];
+    u8 unknown34;
+    s16 idle_attack_graphic;
+    s16 hero_glow_graphic;
+    s16 unknown36;
+    Vector projectile_spawning_area;
   }
   if (header_game_version >= 66.60) {
     u8 unknown39[2];
@@ -1273,44 +1416,156 @@ struct InitMissile : InitBaseOffensive {
 };
 
 struct InitBuilding : InitCombat {
-  u8 unknown24;
-  s16 unknown25[6];
+  u8 unknown24[2];
+  float garrison_heal_rate;
+  s16 unknown25[2];
+  u8 garrison_type;
+  u8 unknown30[2];
   if (header_game_version >= 66) {
     u8 unknown_building_1[24];
   }
 };
 
+enum UnitClass : s16 {
+  Archer,
+  Artifact,
+  TradeBoat,
+  Building,
+  Civilian,
+  OceanFish,
+  Infantry,
+  BerryBush,
+  StoneMine,
+  PreyAnimal,
+  PredatorAnimal,
+  Miscellaneous,
+  Cavalry,
+  SiegeWeapon,
+  Terrain,
+  Tree,
+  TreeStump,
+  Healer,
+  Monk,
+  TradeCart,
+  TransportBoat,
+  FishingBoat,
+  Warship,
+  Conquistador,
+  WarElephant,
+  Hero,
+  ElephantArcher,
+  Wall,
+  Phalanx,
+  DomesticAnimal,
+  Flag,
+  DeepSeaFish,
+  GoldMine,
+  ShoreFish,
+  Cliff,
+  Petard,
+  CavalryArcher,
+  Doppelganger,
+  Bird,
+  Gate,
+  SalvagePile,
+  ResourcePile,
+  Relic,
+  MonkWithRelic,
+  HandCannoneer,
+  TwoHandedSwordsman,
+  Pikeman,
+  Scout,
+  OreMine,
+  Farm,
+  Spearman,
+  PackedUnit,
+  Tower,
+  BoardingBoar,
+  UnpackedSiegeUnit,
+  Ballista,
+  Raider,
+  CavalryRaider,
+  Livestock,
+  King,
+  MiscBuilding,
+  ControlledAnimal
+};
+
+struct ResourceStorage {
+  Resource type;
+  float amount;
+  u8 store_mode;
+}[[format("res_storage_name")]];
+
+fn res_storage_name(ref ResourceStorage rs) {
+    return std::format("{}: {}", rs.type, rs.amount);
+};
+
+struct DamageGraphic {
+  s16 graphic_id;
+  u8 damage_percent;
+  u8 apply_mode;
+}[[format("fmt_damage_graphic")]];
+
+fn fmt_damage_graphic(DamageGraphic dg) {
+  return std::format("{}%: {}", dg.damage_percent, dg.graphic_id);
+};
+
 struct InitObject {
-  u8 u1;
+  type::Magic<"\x16">;
   UnitType type;
   u16 id[4];
-  u8 u2;
-  u8 u3;
-  if(header_game_version < 66)
-  u32 u3_1;
-  u16 u4[2];
-  float u5;
-  u8 u6;
-  float u7[2];
-  s16 u7_1[2];
-  float u7_2;
-  u8 u8_0;
-  u16 u8_1[19];
-  float u8_2;
-  u16 u8_3[4];
-  u8 u8_4;
-  u16 u9;
+  UnitClass class;
+  if (header_game_version < 66) {
+    u32 hotkey_id;
+  }
+  u8 unknown1[2];
+  u16 health_points;
+  float line_of_sight;
+  u8 garrison_capacity;
+  float collision_size_x;
+  float collision_size_y;
+  s16 resource_capacity;
+  ResourceStorage resources[3];
+  type::Magic<"\x00">; // Magic to check if it's ever another value for: u8 unknown2;
+  u32 name_string_id;
+  u32 create_string_id;
+  TerrainTable terrain_table;
+  s16 dead_unit;
+  s16 icon;
+  u8 unknown3[9];
+  float collision_size_z;
+  u8 obstruction_type;
+  u8 blockage_class;
+  u8 unknown5;
+  s16 standing_graphics_1;
+  s16 standing_graphics_2;
+  s16 dying_graphics_1;
+  s16 dying_graphics_2;
   if (header_game_version >= 64) {
-    s16 u10[2];
-    u8 u11;
-    u32 u12;
+    type::Magic<"\xFE\xFF\xFF\xFF">; // Magic to check if it's ever another value for: s16 unknown6;
+
+    u8 unknown7;
+    u32 unknown8;
   }
   if (header_game_version >= 66) {
-    s8 u21[29];
-    s8 u_count;
-    s32 u22[u_count];
+    s16 selection_sound;
+    s16 dying_sound;
+    s16 train_sound;
+    s16 damage_sound;
+    u32 selection_sound_big;
+    u32 dying_sound_big;
+    u32 train_sound_big;
+    u32 damage_sound_big;
+    s8 interface_kind;
+    s8 combat_level;
+    s8 interaction_mode;
+    s8 minimap_mode;
+    s8 unknown9;
+    s8 damage_graphic_count;
+    DamageGraphic damage_graphic[damage_graphic_count];
   }
-  DeString unit_name;
+  DeString internal_name;
   match (type) {
     (10): InitBaseUnit [[inline]];
     (20): InitAnimatedUnit [[inline]];
@@ -1321,7 +1576,11 @@ struct InitObject {
     (UnitType::BuildingUnit): InitBuilding [[inline]];
     (_): std::error("Unknown type");
   }
-  u8 u20;
+  type::Magic<"\x21">;
+}[[format("init_object_name")]];
+
+fn init_object_name(InitObject io) {
+  return std::format("{}: {}", io.type, io.internal_name);
 };
 
 struct InitMap {
@@ -1372,7 +1631,7 @@ struct UnknownSection1 {
   float unknown4;
 };
 
-struct UnitConfig {
+struct UnitUnlocks {
   u32 unit_id;
   u8 unknown1;
   s32 production_building_id;
@@ -1386,17 +1645,44 @@ struct UnitConfig {
   s32 required_tech_id;
   s32 unknown8;
   s32 enabling_tech_id;
+}[[format("unit_unlock_name")]];
+
+fn unit_unlock_name(ref UnitUnlocks uu) {
+  return std::format("{{unit: {}}}", uu.unit_id);
 };
 
-struct CivMaybe {
+struct AgeUnlock {
+  s32 unknown1;
+  s32 age_id;
+  u8 unknown2;
+  u8 unlocked_buildings;
+  s32 building_ids[unlocked_buildings];
+  u8 unlocked_units;
+  s32 unit_ids[unlocked_units];
+  u8 unlocked_techs;
+  s32 tech_ids[unlocked_techs];
+  u8 unknown3[106];
+}[[format("age_unlock_name")]];
+
+fn age_unlock_name(ref AgeUnlock au) {
+    return std::format("{{age_id: {}}}", au.age_id);
+};
+
+struct BuildingUnlocks {
+  s32 unknown1;
   s32 building_id;
-  u8 unknown1;
-  u8 unknown_count1;
-  s32 unknown_units1[unknown_count1];
-  u8 unit_count;
-  s32 trainable_units[unit_count];
-  u8 tech_count;
-  s32 available_techs[tech_count];
+  u8 unknown2;
+  u8 unlocked_buildings;
+  s32 building_ids[unlocked_buildings];
+  u8 unlocked_units;
+  s32 unit_ids[unlocked_units];
+  u8 unlocked_techs;
+  s32 tech_ids[unlocked_techs];
+  u8 unknown3[99];
+}[[format("building_unlock_name")]];
+
+fn building_unlock_name(ref BuildingUnlocks bu) {
+    return std::format("{{building_id: {}}}", bu.building_id);
 };
 
 struct TechUnlocks {
@@ -1412,7 +1698,7 @@ struct TechUnlocks {
   u8 unknown2[96];
 }[[format("tech_unlock_name")]];
 
-fn tech_unlock_name(TechUnlocks tu) {
+fn tech_unlock_name(ref TechUnlocks tu) {
   return std::format("{{tech: {}}}", tu.tech_id);
 };
 
@@ -1480,55 +1766,25 @@ struct Init<auto num_players> {
     type::Magic<"\x0B">;
     u8 unknown_section_4[65];
     type::Magic<"\x0B">;
-    u8 unknown_section_5[85];
-    if (std::mem::read_unsigned($, 1) != 0x0B) {
-      u8 unknown_section_5_1[4];
-    }
-    type::Magic<"\x0B">;
-    u8 unknown_section_6[545];
-    type::Magic<"\x0B">;
-    u8 unknown_section_7[970];
-    type::Magic<"\x0B">;
-    u8 unknown_section_8[2953];
-    type::Magic<"\x0B">;
-    u8 unknown_section_9[340];
-    type::Magic<"\x0B">;
-    u8 unknown_section_10[1465];
-    type::Magic<"\x0B">;
-    u8 unknown_section_11[2412];
-    type::Magic<"\x0B">;
-    u8 unknown_section_12[1883];
-    type::Magic<"\x0B">;
-    u8 unknown_section_13[5588];
-    type::Magic<"\x0B">;
-    u8 unknown_section_14[8864];
-    type::Magic<"\x0B">;
-    u8 unknown_section_15[2751];
-    type::Magic<"\x0B">;
-    u8 unknown_section_16[6962];
-    if (std::mem::read_unsigned($, 1) != 0x0B) {
-      u8 unknown_section_16_1[111];
-    }
-    type::Magic<"\x0B">;
-    u8 unknown_section_17[685];
-    type::Magic<"\x0B">;
-    u8 unknown_section_18[1164];
-    type::Magic<"\x0B">;
-    u8 unknown_section_19[1299];
-    type::Magic<"\x0B">;
-    u8 unknown_section_20[2419];
-    type::Magic<"\x0B">;
-    u8 unknown_section_21[3391];
-    type::Magic<"\x0B">;
-    u8 unknown_section_22[963];
-    type::Magic<"\x0B">;
-    u8 unknown_section_23[while(std::mem::read_unsigned($, 1) != 0x0B)];
+    u8 unknown_section_5[72];
+    u8 available_ages;
+    u8 available_buildings;
+    u8 available_units;
+    u8 available_techs;
+    AgeUnlock age_unlocks[available_ages];
+    BuildingUnlocks building_unlocks[available_buildings];
+    u8 unknown18[4];
+    UnitUnlocks unit_unlocks[available_units];
+    TechUnlocks tech_unlocks[available_techs];
+    u8 unknown_section_12[while(std::mem::read_unsigned($, 1) != 0x0B)];
     type::Magic<"\x0B"> sep[2];
-    u32 unknown21[while(std::mem::read_unsigned($, 1) != 0x0B)];
+    u8 unknown_section_13[while(std::mem::read_unsigned($, 1) != 0x0B)];
     type::Magic<"\x0B">;
-    UnknownInit2 unknown22;
+    EnabledObjects enabled_objects;
+    u32 enabled_count = std::math::accumulate($ - enabled_objects.count * 4, $, 4);
+    std::print(enabled_count);
     type::Magic<"\x0B">;
-    InitObject initial_objects[while(std::mem::read_unsigned($, 1) != 0x0B)];
+    InitObject initial_objects[enabled_count];
     type::Magic<"\x0B">;
     InitMap initial_map;
     InitStateRestore initial_state_restore;
