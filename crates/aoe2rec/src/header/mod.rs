@@ -50,9 +50,9 @@ pub enum Difficulty {
     Easiest = 4,
 }
 
-impl Into<i32> for Difficulty {
-    fn into(self) -> i32 {
-        match self {
+impl From<Difficulty> for i32 {
+    fn from(num: Difficulty) -> Self {
+        match num {
             Difficulty::Extreme => -1,
             Difficulty::Hardest => 0,
             Difficulty::Hard => 1,
