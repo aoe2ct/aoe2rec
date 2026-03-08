@@ -1,6 +1,6 @@
 #pragma endian little
 #pragma pattern_limit 10000000000
-#pragma array_limit 70000
+#pragma array_limit 10000000
 #pragma loop_limit 100000
 
 import type.magic;
@@ -61,7 +61,8 @@ struct Player {
     u8 selected_color;
     u8 selected_team_id;
     u8 resolved_team_id;
-    u8 dat_crc[8];
+    u32 datamod_checksum;
+    u8 dat_crc[4];
     u8 mp_game_version;
     u32 civ_id;
     u32 custom_civ_count;
@@ -78,7 +79,8 @@ struct Player {
     s32 player_number;
     bool prefer_random;
     bool custom_ai;
-    u8 handicap[8];
+    u8 unknown_handicap[4];
+    s32 handicap;
     if (header_game_version >= 64)
     u32 unknown_64_4;
     if (header_game_version >= 67.2)
@@ -116,12 +118,21 @@ struct Unknown66_3Lobby {
     u32 unknown3;
 };
 
+enum Difficulty : s32 {
+  Extreme = -1,
+  Hardest = 0,
+  Hard,
+  Moderate,
+  Standard,
+  Easiest
+};
+
 struct LobbySettings {
     u32 game_options_version;
     u32 num_dlc;
     u32 dlcs[num_dlc];
-    u32 dataset_ref;
-    u32 difficulty;
+    Difficulty difficulty;
+    u32 map_size;
     u32 selected_map_id;
     u32 resolved_map_id;
     u32 reveal_map;
@@ -137,8 +148,8 @@ struct LobbySettings {
     u32 population_limit;
     u32 n_players;
     u32 unused_player_color;
-    s32 victory_amount;
     u8 unknown1;
+    s32 victory_amount;
     Separator;
     bool trade_enabled;
     bool team_bonus_disabled;
@@ -992,6 +1003,8 @@ struct UnitAI<auto ai_type> {
     if (header_game_version >= 63 && ai_type == 15 || ai_type == 17) {
         u8 unknown_de3[4];
     }
+    if (header_game_version >= 67.2)
+    s8 unknown_de4;
 };
 
 fn has_position() {
@@ -1034,6 +1047,8 @@ struct Combat<auto type> : BaseCombat<type> {
         Vector position;
         u8 flag;
     }
+    if (header_game_version >= 67.2)
+    s8 unknown_de_67_2_1;
     u8 town_bell_flag;
     s32 town_bell_target_id;
     float town_bell_target_x;

@@ -183,7 +183,7 @@ pub enum ActionData {
         data: Vec<u8>,
     },
     #[br(magic = 41u8)]
-    Unknown41 {
+    Transform {
         player_id: u8,
         action_length: u16,
         #[br(count = length - 1 - 3)]
@@ -243,7 +243,11 @@ pub enum ActionData {
         data: Vec<u8>,
     },
     #[br(magic = 103u8)]
-    Game(Game),
+    Game {
+        player_id: u8,
+        action_length: u16,
+        game_command: Game,
+    },
     #[br(magic = 104u8)]
     Unknown104 {
         player_id: u8,
@@ -463,9 +467,7 @@ pub enum OrderType {
 pub enum Game {
     #[br(magic = 0u8)]
     Diplomacy {
-        #[br(pad_after = 1)]
-        player_id: u8,
-        #[br(pad_after = 3)]
+        #[br(pad_after = 4)]
         target_player_id: u8,
         stance_float: f32,
         stance: u8,
@@ -473,7 +475,6 @@ pub enum Game {
     #[br(magic = 1u8)]
     Speed {
         #[br(pad_after = 1)]
-        player_id: u8,
         unknown: u32,
         speed: f32,
         unknown2: u8,
@@ -481,20 +482,13 @@ pub enum Game {
     #[br(magic = 2u8)]
     InstantBuild {
         #[br(pad_after = 1)]
-        player_id: u8,
         unknown: [u8; 9],
         uknown2: [u8; 3],
         uknown3: u32,
     },
-    #[br(magic = 3u8)]
-    UnknownCommand3 {
-        #[br(pad_after = 1)]
-        player_id: u8,
-    },
     #[br(magic = 4u8)]
     QuickBuild {
         #[br(pad_after = 1)]
-        player_id: u8,
         status: Bool,
     },
     #[br(magic = 5u8)]
@@ -506,62 +500,29 @@ pub enum Game {
     #[br(magic = 6u8)]
     Cheat {
         #[br(pad_after = 1)]
-        player_id: u8,
         cheat_id: u8,
     },
-    #[br(magic = 7u8)]
-    UnknownCommand4 {
+    #[br(magic = 9u8)]
+    UnknownCommand9 {
         #[br(pad_after = 1)]
         player_id: u8,
     },
-    #[br(magic = 8u8)]
-    UnknownCommand5 {
-        // This seems to be something map scripts do at the beginning of the game.
-        // For example this seems to happen on team Arena and Black Forest
-        #[br(pad_after = 1)]
-        player_id: u8,
-    },
-    // "unk0"/If(this.mode == 'unk0', Struct(
-    //     Padding(9)
-    // )),
-    // "spy"/If(this.mode == 'spy', Struct(
-    //     Padding(9)
-    // )),
-    // "unk1"/If(this.mode == 'unk1', Struct(
-    //     Padding(9)
-    // )),
-    // "farm_queue"/If(this.mode == 'farm_queue', Struct(
-    //     "amount"/Byte, # this seems to be a bit inconsistent between versions, needs more research
-    //     Padding(8)
-    // )),
-    // "farm_unqueue"/If(this.mode == 'farm_unqueue', Struct(
-    //     "amount"/Byte, # this seems to be a bit inconsistent between versions, needs more research
-    //     Padding(8)
-    // )),
-    // # toggle farm auto seed queue
-    // "farm_autoqueue"/If(this.mode == 'farm_autoqueue', Struct(
-    //     Padding(9)
-    // )),
-    //
-    // "fishtrap_queue" / If(this.mode == 'fishtrap_queue', Struct(
-    //     "amount" / Byte,
-    //     Padding(8)
-    // )),
-    // "fishtrap_unqueue" / If(this.mode == 'fishtrap_unqueue', Struct(
-    //     "amount" / Byte,
-    //     Padding(8)
-    // )),
-    //
-    // # toggle fish trap auto place queue
-    // "fishtrap_autoqueue"/If(this.mode == 'fishtrap_autoqueue', Struct(
-    //     Padding(9)
-    // )),
-    //
-    // # toggles the default stance when units are created. All players start on aggressive by default, if the player
-    // # (initially) has defensive enabled it is called right before the first unit is queued, and again every time
-    // # the player toggles it in the game options menu
-    // "default_stance" / If(this.mode == 'default_stance', Struct(
-    //     Padding(9)
-    // )),
-    // Padding(3)
+    #[br(magic = 10u8)]
+    Spy {},
+    #[br(magic = 11u8)]
+    UnknownCommand11 {},
+    #[br(magic = 13u8)]
+    FarmQueue {},
+    #[br(magic = 14u8)]
+    FarmUnqueue {},
+    #[br(magic = 16u8)]
+    FarmAutoqueue {},
+    #[br(magic = 17u8)]
+    FishtrapQueue {},
+    #[br(magic = 18u8)]
+    FishtrapUnqueue {},
+    #[br(magic = 19u8)]
+    FishtrapAutoqueue {},
+    #[br(magic = 20u8)]
+    DefaultStance {},
 }

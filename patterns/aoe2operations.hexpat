@@ -491,6 +491,10 @@ namespace aoe2op {
       u32 chapter_address;
       u8 chapter_data[chapter_end - $];
     }
+  }[[format("aoe2op::fmt_action")]];
+
+  fn fmt_action(Action a) {
+    return std::format("Action: {}", a.action_type);
   };
 
   struct Sync {
@@ -570,5 +574,9 @@ namespace aoe2op {
       std::error(std::format("Unknown action type: {} at 0x{:X}", u32(type), $));
       }
     }
+  }[[format("aoe2op::fmt_operation")]];
+
+  fn fmt_operation(ref Operation op) {
+    return std::format("{}", op.type);
   };
 }
