@@ -71,8 +71,8 @@ pub struct SavegameHeader {
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Clone)]
 pub struct GameSettings {
-    pub dataset_ref: u32,
-    pub difficulty: u32,
+    pub difficulty: i32,
+    pub map_size: u32,
     pub selected_map_id: u32,
     pub resolved_map_id: u32,
     pub reveal_map: u32,
@@ -123,8 +123,8 @@ impl From<&aoe2rec::summary::SavegameSummary<'_>> for GameSettings {
             .map(|map_str| map_str.clone().into())
             .collect();
         GameSettings {
-            dataset_ref: gs.dataset_ref,
-            difficulty: gs.difficulty,
+            difficulty: gs.difficulty.into(),
+            map_size: gs.map_size,
             selected_map_id: gs.selected_map_id,
             resolved_map_id: gs.resolved_map_id,
             reveal_map: gs.reveal_map,

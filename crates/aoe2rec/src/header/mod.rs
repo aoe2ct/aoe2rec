@@ -39,7 +39,7 @@ pub struct RecHeader {
 }
 
 #[binrw]
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone, Copy)]
 #[brw(repr(i32))]
 pub enum Difficulty {
     Extreme = -1,
@@ -48,6 +48,19 @@ pub enum Difficulty {
     Moderate = 2,
     Standard = 3,
     Easiest = 4,
+}
+
+impl Into<i32> for Difficulty {
+    fn into(self) -> i32 {
+        match self {
+            Difficulty::Extreme => -1,
+            Difficulty::Hardest => 0,
+            Difficulty::Hard => 1,
+            Difficulty::Moderate => 2,
+            Difficulty::Standard => 3,
+            Difficulty::Easiest => 4,
+        }
+    }
 }
 
 #[binrw]
