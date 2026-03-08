@@ -11,7 +11,7 @@ repository = "https://github.com/aoe2ct/aoe2rec"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-aoe2rec = { path = "../aoe2rec", version = "0.8.0" }
+aoe2rec = { path = "../aoe2rec", version = "0.9.0" }
 bytes = { version = "1.9.0", features = ["std"] }
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
