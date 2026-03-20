@@ -4,7 +4,6 @@ pub mod minimal;
 pub mod summary;
 mod tests;
 
-use binrw::helpers::until_eof;
 use binrw::io::{BufReader, Cursor, SeekFrom};
 use binrw::{binrw, BinReaderExt, BinResult, BinWriterExt, NullString};
 use header::{decompress, RecHeader};
@@ -22,7 +21,7 @@ pub struct Savegame {
     pub zheader: RecHeader,
     pub log_version: u32,
     pub meta: Meta,
-    #[br(parse_with = until_eof, args(zheader.version_major))]
+    #[br(parse_with = parse_operations, args(zheader.version_major))]
     pub operations: Vec<Operation>,
 }
 
@@ -61,11 +60,17 @@ pub enum Operation {
     #[br(magic = 1u32)]
     Action {
         length: u32,
-        #[br(pad_size_to = length, args(length, major))]
-        action_data: actions::ActionData,
+        #[br(temp, count = length)]
+        #[bw(ignore)]
+        data: Vec<u8>,
+        #[br(calc = {
+            let mut reader = Cursor::new(&data);
+            reader.read_le_args::<actions::ActionData>((length, major)).ok()
+        })]
+        action_data: Option<actions::ActionData>,
         world_time: u32,
         #[serde(skip_serializing)]
-        #[br(if(matches!(action_data, actions::ActionData::Chapter { player_id: _, action_length: _ })))]
+        #[br(if(matches!(action_data, Some(actions::ActionData::Chapter { player_id: _, action_length: _ }))))]
         chap: Option<ChapterData>,
     },
     #[br(magic = 2u32)]
@@ -98,6 +103,48 @@ pub enum Operation {
         version_repeat: u32,
         #[br(magic = b"\xce\xa4\x59\xb1\x05\xdb\x7b\x43")]
         end_bit: (),
+    },
+    #[br(magic = 7u32)]
+    Ai {
+        length: u32,
+        #[br(count = length)]
+        data: Vec<u8>,
+    },
+    #[br(magic = 8u32)]
+    MapNote {
+        length: u32,
+        #[br(count = length)]
+        data: Vec<u8>,
+    },
+    #[br(magic = 9u32)]
+    InitialState {
+        length: u32,
+        #[br(count = length)]
+        data: Vec<u8>,
+    },
+    #[br(magic = 10u32)]
+    Op10 {
+        length: u32,
+        #[br(count = length)]
+        data: Vec<u8>,
+    },
+    #[br(magic = 11u32)]
+    Op11 {
+        length: u32,
+        #[br(count = length)]
+        data: Vec<u8>,
+    },
+    #[br(magic = 12u32)]
+    Op12 {
+        length: u32,
+        #[br(count = length)]
+        data: Vec<u8>,
+    },
+    #[br(magic = 13u32)]
+    AiScript {
+        length: u32,
+        #[br(count = length)]
+        data: Vec<u8>,
     },
 }
 
@@ -351,7 +398,7 @@ impl Savegame {
             .iter()
             .map(|operation| match operation {
                 Operation::Action { action_data, .. } => match action_data {
-                    actions::ActionData::Resign { player_id, .. } => *player_id,
+                    Some(actions::ActionData::Resign { player_id, .. }) => *player_id,
                     _ => 100,
                 },
                 _ => 100,
@@ -390,6 +437,43 @@ fn read_strings_of_length() -> BinResult<Vec<DeString>> {
         strings.push(string);
     }
     Ok(strings)
+}
+
+fn parse_operations<R: binrw::io::Read + binrw::io::Seek>(
+    reader: &mut R,
+    endian: binrw::Endian,
+    args: (u16,),
+) -> binrw::BinResult<Vec<Operation>> {
+    let mut operations = Vec::new();
+    loop {
+        let magic_res: binrw::BinResult<u32> = reader.read_type(endian);
+        if let Err(e) = magic_res {
+            if matches!(e, binrw::Error::Io(ref io_err) if io_err.kind() == std::io::ErrorKind::UnexpectedEof) {
+                break;
+            }
+            return Err(e);
+        }
+        let magic = magic_res.unwrap();
+        if magic == 0 || magic > 100 {
+            reader.seek(std::io::SeekFrom::Current(-3))?;
+            continue;
+        }
+        reader.seek(std::io::SeekFrom::Current(-4))?;
+        let res: binrw::BinResult<Operation> = reader.read_type_args(endian, (args.0,));
+        match res {
+            Ok(op) => {
+                operations.push(op);
+                if magic == 6 {
+                    break;
+                }
+            }
+            Err(_) => {
+                // Skip one byte and try to re-sync if parsing failed
+                reader.seek(std::io::SeekFrom::Current(-3))?;
+            }
+        }
+    }
+    Ok(operations)
 }
 
 #[binrw::writer(writer, endian)]
