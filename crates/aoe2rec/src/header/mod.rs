@@ -34,7 +34,7 @@ pub struct RecHeader {
     pub ai_config: AIConfig,
     pub replay: Replay,
     pub map_info: MapInfo,
-    #[br(args(replay.num_players, version_major))]
+    #[br(args(replay.num_players, version_major, map_info.size_x, map_info.size_y))]
     pub initial: Initial,
 }
 
@@ -391,7 +391,7 @@ pub struct EmptySlot {
 
 #[binrw]
 #[derive(Serialize, Debug)]
-#[br(import(num_players: u8, major: u16))]
+#[br(import(num_players: u8, major: u16, map_size_x: u32, map_size_y: u32))]
 pub struct Initial {
     pub restore_time: u32,
     pub num_particles: u32,
@@ -404,6 +404,32 @@ pub struct Initial {
     pub players: Vec<PlayerInit>,
     #[serde(skip_serializing)]
     pub unknown1: [u8; 21],
+    #[serde(flatten)]
+    #[bw(ignore)]
+    #[br(parse_with = parse_initial_tail, args(num_players, map_size_x, map_size_y))]
+    pub initial_tail: InitialTail,
+}
+
+#[derive(Serialize, Debug)]
+pub struct InitialObjectsList {
+    pub count: u32,
+    pub object_ids: Vec<u32>,
+}
+
+#[derive(Serialize, Debug)]
+pub struct InitialObjectInstance {
+    pub object_id: u32,
+    pub object_type_id: u16,
+    pub object_kind: u8,
+    pub player_id: u8,
+    pub x: f32,
+    pub y: f32,
+}
+
+#[derive(Serialize, Debug)]
+pub struct InitialTail {
+    pub initial_objects: Vec<InitialObjectsList>,
+    pub initial_object_instances: Vec<InitialObjectInstance>,
 }
 #[binrw]
 #[derive(Serialize, Debug, Default)]
@@ -521,4 +547,187 @@ pub struct PlayerView {
 pub struct Location {
     pub x: u16,
     pub y: u16,
+}
+
+#[binrw::parser(reader, endian)]
+fn parse_initial_tail(
+    num_players: u8,
+    map_size_x: u32,
+    map_size_y: u32,
+) -> binrw::BinResult<InitialTail> {
+    let _ = endian;
+    let mut rest = Vec::new();
+    reader.read_to_end(&mut rest)?;
+
+    let initial_objects = parse_initial_objects_from_bytes(&rest, num_players);
+    let initial_object_instances =
+        parse_initial_object_instances(&rest, num_players, map_size_x, map_size_y);
+
+    Ok(InitialTail {
+        initial_objects,
+        initial_object_instances,
+    })
+}
+
+fn parse_initial_objects_from_bytes(
+    rest: &[u8],
+    num_players: u8,
+) -> Vec<InitialObjectsList> {
+    let mut results: Vec<InitialObjectsList> = Vec::new();
+    let max_lists = usize::from(num_players) + 1; // include Gaia if present
+    let mut i = 0usize;
+
+    while i + 5 < rest.len() && results.len() < max_lists {
+        if rest[i] != 0x0B {
+            i += 1;
+            continue;
+        }
+
+        let count = u32::from_le_bytes([
+            rest[i + 1],
+            rest[i + 2],
+            rest[i + 3],
+            rest[i + 4],
+        ]) as usize;
+
+        if count < 50 || count > 10_000 {
+            i += 1;
+            continue;
+        }
+
+        let end = i + 1 + 4 + count * 4;
+        if end >= rest.len() {
+            i += 1;
+            continue;
+        }
+
+        if rest[end] != 0x0B {
+            i += 1;
+            continue;
+        }
+
+        let mut object_ids = Vec::with_capacity(count);
+        let mut cursor = i + 1 + 4;
+        for _ in 0..count {
+            let val = u32::from_le_bytes([
+                rest[cursor],
+                rest[cursor + 1],
+                rest[cursor + 2],
+                rest[cursor + 3],
+            ]);
+            object_ids.push(val);
+            cursor += 4;
+        }
+
+        results.push(InitialObjectsList {
+            count: count as u32,
+            object_ids,
+        });
+
+        i = end + 1;
+    }
+
+    results
+}
+
+fn parse_initial_object_instances(
+    rest: &[u8],
+    num_players: u8,
+    map_size_x: u32,
+    map_size_y: u32,
+) -> Vec<InitialObjectInstance> {
+    let mut results = Vec::new();
+
+    use std::collections::HashSet;
+    let mut seen_ids: HashSet<u32> = HashSet::new();
+
+    let mut cursor = 0usize;
+    while cursor + 40 < rest.len() {
+        let instance =
+            parse_object_instance_at(rest, cursor, num_players, map_size_x, map_size_y);
+        if let Some(instance) = instance {
+            if seen_ids.insert(instance.object_id) {
+                results.push(instance);
+            }
+            cursor += 1;
+        } else {
+            cursor += 1;
+        }
+    }
+
+    results
+}
+
+fn parse_object_instance_at(
+    rest: &[u8],
+    cursor: usize,
+    num_players: u8,
+    map_size_x: u32,
+    map_size_y: u32,
+) -> Option<InitialObjectInstance> {
+    let obj_type = rest[cursor];
+    if !matches!(obj_type, 10 | 20 | 25 | 30 | 40 | 70 | 80 | 90) {
+        return None;
+    }
+    if cursor + 35 >= rest.len() {
+        return None;
+    }
+    let player_id = rest[cursor + 1];
+    if player_id > num_players {
+        return None;
+    }
+    let object_type_id = u16::from_le_bytes([rest[cursor + 2], rest[cursor + 3]]);
+
+    let object_id = u32::from_le_bytes([
+        rest[cursor + 18],
+        rest[cursor + 19],
+        rest[cursor + 20],
+        rest[cursor + 21],
+    ]);
+    if object_id == 0 || object_id > 5_000_000 {
+        return None;
+    }
+
+    let x = f32::from_le_bytes([
+        rest[cursor + 23],
+        rest[cursor + 24],
+        rest[cursor + 25],
+        rest[cursor + 26],
+    ]);
+    let y = f32::from_le_bytes([
+        rest[cursor + 27],
+        rest[cursor + 28],
+        rest[cursor + 29],
+        rest[cursor + 30],
+    ]);
+    // Validate z coordinate at offset +31
+    let z = f32::from_le_bytes([
+        rest[cursor + 31],
+        rest[cursor + 32],
+        rest[cursor + 33],
+        rest[cursor + 34],
+    ]);
+
+    if !x.is_finite() || !y.is_finite() || !z.is_finite() {
+        return None;
+    }
+    if z < -10.0 || z > 100.0 {
+        return None;
+    }
+    if map_size_x > 0 && map_size_y > 0 {
+        let max_x = map_size_x as f32 + 8.0;
+        let max_y = map_size_y as f32 + 8.0;
+        if x < 0.1 || y < 0.1 || x > max_x || y > max_y {
+            return None;
+        }
+    }
+
+    Some(InitialObjectInstance {
+        object_id,
+        object_type_id,
+        object_kind: obj_type,
+        player_id,
+        x,
+        y,
+    })
 }
