@@ -13,9 +13,19 @@ aoe2rec = "0.1"
 
 ## Example
 
-```rust
-<TODO>
 ```
+cargo run --package aoe2js -- "replay.aoe2record"
+```
+
+## Build the WASM package
+
+```
+cargo install wasm-pack
+cd crates/aoe2rec-js
+wasm-pack build --target bundler
+```
+
+This will create a `pkg` directory inside `crates/aoe2rec-js/`.
 
 ## License
 

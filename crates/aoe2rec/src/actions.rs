@@ -228,12 +228,12 @@ pub enum ActionData {
     Research {
         player_id: u8,
         action_length: u16,
-        building_id: i32,
-        selected: i16,
+        building_id: u32,
+        selected: u16,
         technology_type: u16,
         unknown1: [u8; 5],
-        #[br(count = if selected > -1 { selected } else { 0 })]
-        building_ids: Vec<i32>,
+        #[br(count = (action_length.saturating_sub(13) / 4) as usize)]
+        building_ids: Vec<u32>,
     },
     #[br(magic = 102u8)]
     Build {
