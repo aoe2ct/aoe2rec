@@ -13,8 +13,7 @@ use serde::Serialize;
 pub fn decompress(header_data: Vec<u8>) -> RecHeader {
     let (header, _) = yazi::decompress(&header_data, yazi::Format::Raw).unwrap();
     let mut hreader = BufReader::new(Cursor::new(header));
-    let parsed_header: RecHeader = hreader.read_le().unwrap();
-    return parsed_header;
+    hreader.read_le().unwrap()
 }
 
 #[binrw]
