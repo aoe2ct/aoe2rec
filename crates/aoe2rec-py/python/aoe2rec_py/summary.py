@@ -1,8 +1,8 @@
-from collections import defaultdict
 import collections
+import json
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-import json
 from typing import BinaryIO
 
 try:

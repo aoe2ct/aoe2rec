@@ -22,3 +22,8 @@ features = ["pyo3/extension-module"]
 python-source = "python"
 profile = "release"
 compatibility = "manylinux2014"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+]

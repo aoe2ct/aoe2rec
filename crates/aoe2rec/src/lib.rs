@@ -6,11 +6,14 @@ pub mod summary;
 use binrw::helpers::until_eof;
 use binrw::io::{BufReader, Cursor, SeekFrom, TakeSeekExt};
 use binrw::{binrw, BinReaderExt, BinResult, BinWriterExt, NullString};
+use chrono::{DateTime, Utc};
 use header::{decompress, RecHeader};
 use serde::Serialize;
 use std::error::Error;
 use std::fs::File;
 use summary::GameTeam;
+
+use crate::header::Player;
 
 #[binrw]
 #[derive(Serialize)]
@@ -18,6 +21,35 @@ use summary::GameTeam;
 pub struct Savegame {
     #[br(parse_with=until_eof)]
     pub chapters: Vec<Chapter>,
+}
+
+impl Savegame {
+    pub fn header(&self) -> Option<&RecHeader> {
+        if self.chapters.is_empty() {
+            None
+        } else {
+            Some(&self.chapters[0].zheader)
+        }
+    }
+
+    pub fn operations(&self) -> impl Iterator<Item = &Operation> {
+        self.chapters.iter().flat_map(|c| c.operations.iter())
+    }
+    pub fn played_at(&self) -> DateTime<Utc> {
+        DateTime::from_timestamp_secs(self.header().unwrap().timestamp.into()).unwrap()
+    }
+
+    pub fn is_restored(&self) -> bool {
+        self.world_time() > 0
+    }
+
+    pub fn world_time(&self) -> u32 {
+        self.header().unwrap().replay.world_time
+    }
+
+    pub fn players(&self) -> &Vec<Player> {
+        self.header().unwrap().players()
+    }
 }
 
 fn chapter_size(current_offset: u64, next_offset: u64) -> u64 {
@@ -64,6 +96,7 @@ pub struct ChapterData {
 #[binrw]
 #[derive(Serialize, Debug)]
 #[br(import(major: u16))]
+#[allow(clippy::large_enum_variant)]
 pub enum Operation {
     #[br(magic = 1u32)]
     Action {

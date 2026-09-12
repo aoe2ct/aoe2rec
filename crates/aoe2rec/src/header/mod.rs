@@ -37,6 +37,16 @@ pub struct RecHeader {
     pub initial: Initial,
 }
 
+impl RecHeader {
+    pub fn players(&self) -> &Vec<Player> {
+        &self.game_settings.players
+    }
+
+    pub fn save_version(&self) -> String {
+        format!("{}.{}", self.version_major, self.version_minor)
+    }
+}
+
 #[binrw]
 #[derive(Serialize, Debug, Clone, Copy)]
 #[brw(repr(i32))]

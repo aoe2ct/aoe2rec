@@ -8,5 +8,6 @@ license = "MIT"
 [dependencies]
 binrw = "0.15.0"
 bytes = { version = "1.8.0", features = ["std"] }
+chrono = "0.4.45"
 serde = { version = "1.0.214", features = ["derive"] }
 yazi = "0.2.0"
