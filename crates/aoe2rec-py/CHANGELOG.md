@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.22](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-py-v0.1.21...aoe2rec-py-v0.1.22) - 2026-09-12
+
+### Other
+
+- Implement Python classes to define a better interface
+
 ## [0.1.21](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-py-v0.1.20...aoe2rec-py-v0.1.21) - 2026-03-08
 
 ### Other
