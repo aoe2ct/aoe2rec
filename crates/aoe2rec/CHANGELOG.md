@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.9.0...aoe2rec-v0.10.0) - 2026-09-12
+
+### Added
+
+- [**breaking**] Add support for parsing multichapter recs
+
+### Other
+
+- Implement Python classes to define a better interface
+- Add unknown action 141
+
 ## [0.9.0](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.8.0...aoe2rec-v0.9.0) - 2026-03-08
 
 ### Other
