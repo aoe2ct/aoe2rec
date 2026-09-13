@@ -31,6 +31,7 @@ pub struct RecHeader {
     pub interval_version: [u16; 2],
     #[br(args(version_major))]
     pub game_settings: GameSettings,
+    #[br(args(game_settings.speed, game_settings.n_players))]
     pub ai_config: AIConfig,
     pub replay: Replay,
     pub map_info: MapInfo,
@@ -292,9 +293,10 @@ pub struct GameSettings {
 
 #[binrw]
 #[derive(Serialize, Debug)]
+#[br(import(speed: f32, n_players: u32))]
 pub enum AIConfig {
     #[br(magic = 1u32)]
-    WithAI(AIInfo),
+    WithAI(#[br(args(speed, n_players))] AIInfo),
     #[br(magic = 0u32)]
     WithoutAI {},
 }

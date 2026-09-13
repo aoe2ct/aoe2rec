@@ -5,8 +5,9 @@ use crate::DeString;
 
 #[binrw]
 #[derive(Serialize, Debug)]
+#[br(import(speed: f32, n_players: u32))]
 pub struct AIInfo {
-    #[br(parse_with = skip_ai)]
+    #[br(parse_with = skip_ai, args(speed, n_players))]
     skip: (), // #[br(dbg)]
               // max_strings: u16,
               // #[br(dbg)]
@@ -76,18 +77,34 @@ pub struct AIFile {
 }
 
 #[binrw::parser(reader, endian)]
-fn skip_ai() -> BinResult<()> {
-    let mut null_count = 0;
-    loop {
-        let next_byte: u8 = reader.read_type(endian)?;
-        if next_byte == 0 {
-            null_count += 1
-        } else {
-            null_count = 0;
-        }
-        if null_count == 4096 {
-            break;
-        }
+fn skip_ai(speed: f32, n_players: u32) -> BinResult<()> {
+    use binrw::io::SeekFrom;
+    let expected_players = (n_players + 1) as u8;
+
+    let mut window = [0u8; 60];
+    for b in &mut window {
+        *b = reader.read_type(endian)?;
     }
-    Ok(())
+
+    loop {
+        let candidate_speed = f32::from_le_bytes(window[24..28].try_into().unwrap());
+        let candidate_players = window[47];
+        let temp_pause = window[28];
+        let instant_build = window[48];
+        let cheats = window[49];
+
+        if (candidate_speed - speed).abs() < 0.001
+            && candidate_players == expected_players
+            && (temp_pause == 0 || temp_pause == 1)
+            && (instant_build == 0 || instant_build == 1)
+            && (cheats == 0 || cheats == 1)
+        {
+            reader.seek(SeekFrom::Current(-60))?;
+            return Ok(());
+        }
+
+        let next_byte: u8 = reader.read_type(endian)?;
+        window.copy_within(1..60, 0);
+        window[59] = next_byte;
+    }
 }
