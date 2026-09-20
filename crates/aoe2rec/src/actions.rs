@@ -465,64 +465,63 @@ pub enum OrderType {
 #[binrw]
 #[derive(Serialize, Debug)]
 pub enum Game {
-    #[br(magic = 0u8)]
+    #[br(magic = 0u32)]
     Diplomacy {
         #[br(pad_after = 4)]
         target_player_id: u8,
         stance_float: f32,
         stance: u8,
     },
-    #[br(magic = 1u8)]
+    #[br(magic = 1u32)]
     Speed {
         #[br(pad_after = 1)]
         unknown: u32,
         speed: f32,
         unknown2: u8,
     },
-    #[br(magic = 2u8)]
+    #[br(magic = 2u32)]
     InstantBuild {
-        #[br(pad_after = 1)]
         unknown: [u8; 9],
         uknown2: [u8; 3],
-        uknown3: u32,
     },
-    #[br(magic = 4u8)]
+    #[br(magic = 4u32)]
     QuickBuild {
         #[br(pad_after = 1)]
         status: Bool,
     },
-    #[br(magic = 5u8)]
+    #[br(magic = 5u32)]
     AlliedVictory {
         #[br(pad_after = 1)]
         player_id: u8,
         status: Bool,
     },
-    #[br(magic = 6u8)]
+    #[br(magic = 6u32)]
     Cheat {
-        #[br(pad_after = 1)]
-        cheat_id: u8,
+        unknown1: u16,
+        #[br(pad_after = 8)]
+        cheat_id: u16,
     },
-    #[br(magic = 9u8)]
+    #[br(magic = 9u32)]
     UnknownCommand9 {
         #[br(pad_after = 1)]
         player_id: u8,
     },
-    #[br(magic = 10u8)]
+    #[br(magic = 10u32)]
     Spy {},
-    #[br(magic = 11u8)]
+    #[br(magic = 11u32)]
     UnknownCommand11 {},
-    #[br(magic = 13u8)]
+    #[br(magic = 13u32)]
     FarmQueue {},
-    #[br(magic = 14u8)]
+    #[br(magic = 14u32)]
     FarmUnqueue {},
-    #[br(magic = 16u8)]
+    #[br(magic = 16u32)]
     FarmAutoqueue {},
-    #[br(magic = 17u8)]
+    #[br(magic = 17u32)]
     FishtrapQueue {},
-    #[br(magic = 18u8)]
+    #[br(magic = 18u32)]
     FishtrapUnqueue {},
-    #[br(magic = 19u8)]
+    #[br(magic = 19u32)]
     FishtrapAutoqueue {},
-    #[br(magic = 20u8)]
+    #[br(magic = 20u32)]
     DefaultStance {},
 }

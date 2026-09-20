@@ -94,7 +94,8 @@ fn skip_ai(speed: f32, n_players: u32) -> BinResult<()> {
         let cheats = window[49];
 
         if (candidate_speed - speed).abs() < 0.001
-            && candidate_players == expected_players
+            && candidate_players >= 1
+            && candidate_players <= expected_players
             && (temp_pause == 0 || temp_pause == 1)
             && (instant_build == 0 || instant_build == 1)
             && (cheats == 0 || cheats == 1)
