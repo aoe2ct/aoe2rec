@@ -355,12 +355,12 @@ struct MapTile<auto parent_tile_num> {
 
 struct Tile {
     u8 terrain_type;
-    u8 unknown1;
+    s8 unknown1;
     u8 original_terrain_type;
     u8 elevation;
-    u16 unknown2;
-    u16 unknown3;
-    u16 unknown4;
+    s16 unknown2;
+    s16 unknown3;
+    s16 unknown4;
     if (terrain_type == 255) {
         u8 terrain_type;
         u8 elevation2;
@@ -1049,6 +1049,10 @@ struct Combat<auto type> : BaseCombat<type> {
     }
     if (header_game_version >= 67.2)
     s8 unknown_de_67_2_1;
+    if(header_game_version >= 67.2 && has_position()) {
+        Vector unknown_vector_;
+        u8 flag;
+    }
     u8 town_bell_flag;
     s32 town_bell_target_id;
     float town_bell_target_x;
@@ -1175,6 +1179,9 @@ struct UnknownInitInner {
     u8 type;
     DeString unknown4;
     DeString unknown5;
+    if (header_game_version >= 68.9) {
+    DeString unknown_68_9;
+    }
     u16 unknown6[16];
     if (header_game_version >= 66) {
       u16 unknown_count;

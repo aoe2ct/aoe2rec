@@ -137,7 +137,8 @@ namespace aoe2op {
     u32 unit_ids[selected];
   };
 
-  struct Patrol: BaseAggressiveCommand {
+  struct Patrol<auto length>: BaseAggressiveCommand {
+    u8 pad[length - 12 - 36 -8 -36 - selected*4];
   };
 
   struct Formation: BasePlayerAction {
@@ -269,11 +270,16 @@ namespace aoe2op {
     s8 unknown1[6];
   };
 
+  struct FarmQueue {
+      u16 unknown1[6];
+    };
+
   struct Game: BasePlayerAction {
     GameCommand mode;
     match(mode) {
       (GameCommand::Diplomacy): DiplomacyGame [[inline]];
       (GameCommand::InstantBuild): InstantBuild [[inline]];
+      (GameCommand::FarmQueue): FarmQueue [[inline]];
       (GameCommand::FarmAutoqueue): FarmAutoqueue [[inline]];
       (GameCommand::FishtrapAutoqueue): FishtrapAutoqueue [[inline]];
       (GameCommand::DefaultStance): DefaultStance [[inline]];
@@ -445,7 +451,7 @@ namespace aoe2op {
       (ActionType::Stance): Stance [[inline]];
       (ActionType::Guard): Guard [[inline]];
       (ActionType::Follow): Follow [[inline]];
-      (ActionType::Patrol): Patrol [[inline]];
+      (ActionType::Patrol): Patrol<length> [[inline]];
       (ActionType::Formation): Formation [[inline]];
       (ActionType::Chapter): Chapter [[inline]];
       (ActionType::AttackMove): AttackMove [[inline]];
@@ -486,11 +492,6 @@ namespace aoe2op {
       }
     }
     u32 world_time;
-    if (action_type == ActionType::Chapter) {
-      u32 chapter_end;
-      u32 chapter_address;
-      u8 chapter_data[chapter_end - $];
-    }
   }[[format("aoe2op::fmt_action")]];
 
   fn fmt_action(Action a) {
@@ -531,6 +532,18 @@ namespace aoe2op {
     u32 world_time;
   };
 
+  struct Pregame {
+    u32 checksum_interval;
+    bool multiplayer;
+    padding[3];
+    u32 rec_owner;
+    bool reveal_map;
+    padding[3];
+    u32 use_sequence_numbers;
+    u32 number_of_chapters;
+    u32 aok_or_de;
+  };
+
   //struct PostgameBlock {
   //    PostgameBlockType identifier;
   //    match (identifier) {
@@ -540,7 +553,7 @@ namespace aoe2op {
   //};
 
   struct PostgameBlock {
-    u32 identifier;
+    u32 world_time;
     u32 length;
     u32 work_time;
   };
@@ -549,12 +562,14 @@ namespace aoe2op {
     u32 version @ std::mem::size() - 12;
     u32 num_blocks @ std::mem::size() - 16;
     PostgameBlock blocks[num_blocks];
+    u8 unparsed[while(std::mem::read_unsigned($,1) != 0xCE)];
   };
 
   enum OperationType: u32 {
     Action = 1,
     Sync = 2,
     Viewlock = 3,
+    Pregame = 5,
     Chat = 4,
     Postgame = 6,
   };
@@ -567,7 +582,12 @@ namespace aoe2op {
       (OperationType::Viewlock): Viewlock [[inline]];
       (OperationType::Chat): Chat [[inline]];
       (OperationType::Action): Action [[inline]];
-      (OperationType::Postgame): Postgame [[inline]];
+      (OperationType::Pregame): Pregame [[inline]];
+      (OperationType::Postgame): {
+        Postgame [[inline]];
+        type::Magic<"\xCE\xA4\x59\xB1\x05\xDB\x7B\x43">;
+        break;
+      }
       // (OperationType::Postgame): break;
       (_): {
       break;

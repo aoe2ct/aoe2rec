@@ -11,18 +11,6 @@ float game_version;
 import aoe2operations;
 import aoe2header;
 
-struct Meta {
-    u32 checksum_interval;
-    bool multiplayer;
-    padding[3];
-    u32 rec_owner;
-    bool reveal_map;
-    padding[3];
-    u32 use_sequence_numbers;
-    u32 number_of_chapters;
-    u32 aok_or_de;
-};
-
 struct HeaderStart {
     u8 rec_version[7];
     type::Magic<"\x00">;
@@ -32,21 +20,24 @@ struct HeaderStart {
 };
 
 struct Aoe2Save {
-    u32 hlen;
-    u32 check;
-    u8 compressed[hlen - 8];
+    u32 header_end;
+    u32 next_chapter;
+    std::print(header_end);
+    u8 compressed[while($ < header_end)];
     std::mem::Section header = std::mem::create_section("Header");
     hex::dec::zlib_decompress(compressed, header, -15);
-    // HeaderStart header_start @ 0x0 in header;
-    Rec parsed_header @ 0x0 in header;
+    HeaderStart header_start @ 0x0 in header;
+    // Rec parsed_header @ 0x0 in header;
     game_version = std::string::parse_float(std::format("{}.{}", header_start.version_major, header_start.version_minor));
-    u32 log_version;
-    Meta meta;
-    aoe2op::Operation operations[while($ < std::mem::size())];
+    if (next_chapter > 0) {
+      aoe2op::Operation operations[while($ < next_chapter)];
+    } else  {
+      aoe2op::Operation operations[while($ < std::mem::size())];
+    }
 };
 
 
-Aoe2Save savegame @ 0x00;
+Aoe2Save savegame[while(std::mem::read_signed($, 4) > 0)] @ 0x00;
 
 
 // To further analyze the rec, click on "Sections" below and

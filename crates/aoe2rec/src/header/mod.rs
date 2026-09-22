@@ -430,6 +430,8 @@ pub struct InnerUnknownPlayerStruct {
     pub unknown_type: u16,
     pub unknown1: DeString,
     pub unknown2: DeString,
+    #[br(if(major >= 68))]
+    pub unknown_68_9: DeString,
     pub unknown3: [u16; 16],
     #[br(if(major >= 66))]
     pub unknown5: InnerUnknownPlayerStruct2,
