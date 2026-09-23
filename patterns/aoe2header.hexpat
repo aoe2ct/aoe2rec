@@ -1175,6 +1175,8 @@ struct UnknownInitInner {
     u8 type;
     DeString unknown4;
     DeString unknown5;
+    if (header_game_version >= 68.9)
+    DeString unknown_68_9;
     u16 unknown6[16];
     if (header_game_version >= 66) {
       u16 unknown_count;
