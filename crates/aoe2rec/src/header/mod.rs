@@ -33,7 +33,7 @@ pub struct RecHeader {
     pub ai_config: AIConfig,
     pub replay: Replay,
     pub map_info: MapInfo,
-    #[br(args(replay.num_players, version_major))]
+    #[br(args(replay.num_players, version_major, version_minor))]
     pub initial: Initial,
 }
 
@@ -400,7 +400,7 @@ pub struct EmptySlot {
 
 #[binrw]
 #[derive(Serialize, Debug)]
-#[br(import(num_players: u8, major: u16))]
+#[br(import(num_players: u8, major: u16, minor: u16))]
 pub struct Initial {
     pub restore_time: u32,
     pub num_particles: u32,
@@ -409,7 +409,7 @@ pub struct Initial {
     pub particles: Vec<u8>,
     pub identifier: u32,
     #[serde(skip_serializing)]
-    #[br(count = 1, args { inner: (num_players,major) })]
+    #[br(count = 1, args { inner: (num_players, major, minor) })]
     pub players: Vec<PlayerInit>,
     #[serde(skip_serializing)]
     pub unknown1: [u8; 21],
@@ -425,12 +425,12 @@ pub struct InnerUnknownPlayerStruct2 {
 
 #[binrw]
 #[derive(Serialize, Debug)]
-#[br(import(major: u16))]
+#[br(import(major: u16, minor: u16))]
 pub struct InnerUnknownPlayerStruct {
     pub unknown_type: u16,
     pub unknown1: DeString,
     pub unknown2: DeString,
-    #[br(if(major >= 68))]
+    #[br(if(major > 68 || (major == 68 && minor >= 9)))]
     pub unknown_68_9: DeString,
     pub unknown3: [u16; 16],
     #[br(if(major >= 66))]
@@ -445,20 +445,20 @@ pub struct InnerUnknownPlayerStruct {
 
 #[binrw]
 #[derive(Serialize, Debug)]
-#[br(import(major: u16))]
+#[br(import(major: u16, minor: u16))]
 pub struct UnknownPlayerStruct {
     pub sub_count: u16,
     pub unknown1: [u32; 2],
     pub unknown2: [u8; 5],
     #[br(if(major < 66))]
     pub unknown3: [u8; 5],
-    #[br(count=sub_count, args { inner: (major,) })]
+    #[br(count=sub_count, args { inner: (major, minor) })]
     pub unknown_inner: Vec<InnerUnknownPlayerStruct>,
 }
 
 #[binrw]
 #[derive(Serialize, Debug)]
-#[br(import(num_players: u8, major: u16))]
+#[br(import(num_players: u8, major: u16, minor: u16))]
 pub struct PlayerInit {
     pub player_type: u8,
     #[serde(skip_serializing)]
@@ -508,7 +508,7 @@ pub struct PlayerInit {
     #[br(count = 197)]
     pub unknown6: Vec<u8>,
     #[serde(skip_serializing)]
-    #[br(args(major))]
+    #[br(args(major, minor))]
     pub unknown_struct: UnknownPlayerStruct,
     pub dev: [u32; 20],  // TODO: Finish implementing
     pub dev1: [u32; 20], // TODO: Finish implementing
