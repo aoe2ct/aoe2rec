@@ -31,6 +31,19 @@ class RecSummary:
     def __init__(self, handle: BinaryIO):
         data = handle.read()
         self._cache = aoe2rec_py.parse_rec(data)
+        if "zheader" not in self._cache and "chapters" in self._cache:
+            # parse_rec returns the multichapter shape: a list of chapters
+            # each carrying its own zheader and operations. Present the
+            # single-chapter flat shape RecSummary has always exposed:
+            # zheader from the first chapter, operations concatenated in
+            # chapter order.
+            chapters = self._cache["chapters"]
+            self._cache = {
+                **chapters[0],
+                "operations": [
+                    op for chapter in chapters for op in chapter["operations"]
+                ],
+            }
         self.players = {
             player_id + 1: {"resigned": False, "elo": 0, "eapm": 0, **player}
             for player_id, player in enumerate(
