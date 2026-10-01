@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.10.0...aoe2rec-v0.10.1) - 2026-10-01
+
+### Other
+
+- Fix parsing for previous patch games
+
 ## [0.10.0](https://github.com/aoe2ct/aoe2rec/compare/aoe2rec-v0.9.0...aoe2rec-v0.10.0) - 2026-09-22
 
 ### Added
