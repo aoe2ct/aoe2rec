@@ -3,7 +3,7 @@ import json
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import BinaryIO
+from typing import IO, Literal, TypeAlias, TypedDict
 
 try:
     from typing import override
@@ -13,7 +13,14 @@ except ImportError:
         return f
 
 
-from aoe2rec_py import aoe2rec_py
+from aoe2rec_py import parse_rec
+
+DiplomacyTypes: TypeAlias = Literal["1v1", "TG", "FFA", "Other"]
+
+
+class Diplomacy(TypedDict):
+    team_size: str
+    type: DiplomacyTypes
 
 
 @dataclass
@@ -28,13 +35,15 @@ class Chat:
 
 
 class RecSummary:
-    def __init__(self, handle: BinaryIO):
+    chats: list[Chat]
+
+    def __init__(self, handle: IO[bytes]):
         data = handle.read()
-        self._cache = aoe2rec_py.parse_rec(data)
+        self._cache = parse_rec(data)
         self.players = {
             player_id + 1: {"resigned": False, "elo": 0, "eapm": 0, **player}
             for player_id, player in enumerate(
-                self._cache["zheader"]["game_settings"]["players"]
+                self.get_header()["game_settings"]["players"]
             )
         }
         self.duration: float = 0
@@ -42,9 +51,13 @@ class RecSummary:
 
         self._parse_operations()
 
+    def _get_operations(self):
+        for chapter in self._cache["chapters"]:
+            yield from chapter["operations"]
+
     def _parse_operations(self):
         eapm_counter = collections.Counter()
-        for event in self._cache["operations"]:
+        for event in self._get_operations():
             if "Sync" in event:
                 self.duration += event["Sync"]["time_increment"]
             if "Chat" in event:
@@ -79,7 +92,7 @@ class RecSummary:
         for player_id, action_count in eapm_counter.items():
             self.players[player_id]["eapm"] = int(round(action_count / total_minutes))
 
-    def get_chat(self):
+    def get_chat(self) -> list[Chat]:
         return self.chats
 
     def get_postgame(self):
@@ -89,21 +102,19 @@ class RecSummary:
         return False
 
     def get_header(self):
-        return self._cache["zheader"]
+        return self._cache["chapters"][0]["zheader"]
 
     def get_start_time(self):
-        return self._cache["zheader"]["replay"]["world_time"]
+        return self.get_header()["replay"]["world_time"]
 
     def get_duration(self):
-        return timedelta(
-            milliseconds=self.duration + self._cache["zheader"]["replay"]["world_time"]
-        )
+        return timedelta(milliseconds=self.duration + self.get_start_time())
 
     def get_restored(self):
         return self.get_start_time() > 0, self.get_start_time()
 
     def get_version(self):
-        header = self._cache["zheader"]
+        header = self.get_header()
         major = header["version_major"]
         minor = header["version_minor"]
         version = float(f"{major}.{minor}")
@@ -111,14 +122,14 @@ class RecSummary:
             "DE",
             header["game"],
             version,
-            self._cache["log_version"],
+            -1,
             header["build"],
         )
 
     def get_owner(self):
-        return self._cache["zheader"]["replay"]["rec_player"]
+        return self.get_header()["replay"]["rec_player"]
 
-    def get_teams(self):
+    def get_teams(self) -> set[frozenset[int]]:
         teams: defaultdict[int, list[int]] = defaultdict(list)
         for player_id, player in self.players.items():
             team_id: int = player["resolved_team_id"]
@@ -126,9 +137,9 @@ class RecSummary:
                 teams[team_id].append(player_id)
             elif team_id == 1:
                 teams[player_id + 8].append(player_id)
-        return set([frozenset(s) for s in teams.values()])
+        return {frozenset(s) for s in teams.values()}
 
-    def get_diplomacy(self):
+    def get_diplomacy(self) -> Diplomacy:
         diplo_type = self._get_diplomacy_type()
         if diplo_type == "FFA":
             return {"type": diplo_type, "team_size": "FFA"}
@@ -160,7 +171,7 @@ class RecSummary:
         raise NotImplementedError()
 
     def get_platform(self):
-        settings = self._cache["zheader"]["game_settings"]
+        settings = self.get_header()["game_settings"]
         guid = settings["guid"]
         guid_str = f"{guid[0]:02x}{guid[1]:02x}{guid[2]:02x}{guid[3]:02x}-{guid[4]:02x}{guid[5]:02x}-{guid[6]:02x}{guid[7]:02x}-{guid[8]:02x}{guid[9]:02x}-{guid[10]:02x}{guid[11]:02x}{guid[12]:02x}{guid[13]:02x}{guid[14]:02x}{guid[15]:02x}"
         return {
@@ -173,7 +184,7 @@ class RecSummary:
             "private": settings["lobby_visibility"] == 2,
         }
 
-    def _get_diplomacy_type(self):
+    def _get_diplomacy_type(self) -> DiplomacyTypes:
         n_teams = len(self.get_teams())
         n_players = len(self.players)
         if n_teams == 2 and n_players > 2:
@@ -185,7 +196,7 @@ class RecSummary:
         return "Other"
 
     def get_settings(self):
-        settings = self._cache["zheader"]["game_settings"]
+        settings = self.get_header()["game_settings"]
         # TODO: Add missing names from constants in aocref
         return {
             "type": (settings["game_type"], "<Missing>"),
@@ -236,9 +247,7 @@ class RecSummary:
         raise NotImplementedError()
 
     def get_played(self):
-        return datetime.fromtimestamp(
-            self._cache["zheader"]["game_settings"]["timestamp"]
-        )
+        return datetime.fromtimestamp(self.get_header()["game_settings"]["timestamp"])
 
 
 class NotImplementedError(Exception):

@@ -63,11 +63,9 @@ fn chapter_size(current_offset: u64, next_offset: u64) -> u64 {
 #[derive(Serialize)]
 #[br(stream = s)]
 pub struct Chapter {
-    #[br(dbg)]
     pub header_end: u32,
     #[br(calc=<u64>::from(header_end) - s.stream_position().unwrap())]
     header_len: u64,
-    #[br(dbg)]
     pub next_chapter_address: u32,
     // #[br(if(next_chapter_address >0), parse_with=binrw::FilePtr32::parse, ski)]
     // pub next_chapter: Option<Box<Savegame>>,
