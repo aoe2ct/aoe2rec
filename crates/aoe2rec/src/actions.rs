@@ -454,6 +454,13 @@ pub enum ActionData {
         #[br(count = length - 1 - 3)]
         data: Vec<u8>,
     },
+    /// Any action this parser does not know (a new id, or a known id with a layout it does not describe): kept
+    /// as raw bytes, its length being known, instead of failing the whole replay.
+    Unknown {
+        id: u8,
+        #[br(count = length - 1)]
+        data: Vec<u8>,
+    },
 }
 
 #[binrw]

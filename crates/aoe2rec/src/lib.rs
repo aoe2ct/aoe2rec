@@ -99,7 +99,7 @@ pub enum Operation {
     #[br(magic = 1u32)]
     Action {
         length: u32,
-        #[br(pad_size_to = length, args(length, major))]
+        #[br(pad_size_to = length, map_stream = |reader| reader.take_seek(length.into()), args(length, major))]
         action_data: actions::ActionData,
         world_time: u32,
     },
